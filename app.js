@@ -2,11 +2,6 @@
 
 const STORE_KEY = "maintenanceHubData_v1";
 
-const SUPABASE_URL = "https://dgfkmahiymwnusdxfzni.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_JSdwYOdfed3rVuOMl9QKBg_ikDn5l-G";
-const SUPABASE_TABLE = "maintenance_data";
-const SUPABASE_ROW_ID = 1;
-
 function remoteEnabled() {
   return !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 }
