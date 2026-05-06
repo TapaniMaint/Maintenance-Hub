@@ -1,9 +1,9 @@
-
+import { SUPABASE_CONFIG } from "./supabase-config.js";
 
 const STORE_KEY = "maintenanceHubData_v1";
 
-function remoteEnabled() {
-  return !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+export function remoteEnabled() {
+  return !!(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey);
 }
 
 function uid() {
@@ -12,7 +12,7 @@ function uid() {
 
 function defaultData() {
   return {
-    version: 1,
+    version: 2,
     updatedAt: new Date().toISOString(),
     root: {
       id: "root",
@@ -87,6 +87,99 @@ function setLocalDataRaw(data) {
   localStorage.setItem(STORE_KEY, JSON.stringify(data));
 }
 
+function apiHeaders(extra = {}) {
+  return {
+    apikey: SUPABASE_CONFIG.anonKey,
+    Authorization: `Bearer ${SUPABASE_CONFIG.anonKey}`,
+    ...extra
+  };
+}
+
+function tableUrl(table, query = "") {
+  const base = `${SUPABASE_CONFIG.url}/rest/v1/${table}`;
+  return query ? `${base}?${query}` : base;
+}
+
+function publicStorageUrl(path) {
+  return `${SUPABASE_CONFIG.url}/storage/v1/object/public/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
+}
+
+async function requestJson(url, options = {}) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(`Supabase request failed: ${res.status}`);
+  if (res.status === 204) return null;
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function flattenTree(root) {
+  const categories = [];
+  const media = [];
+
+  function visit(node, parentId, sortOrder) {
+    if (node.id !== "root") {
+      categories.push({
+        id: node.id,
+        parent_id: parentId === "root" ? null : parentId,
+        name: node.name,
+        sort_order: sortOrder,
+        updated_at: new Date().toISOString()
+      });
+    }
+
+    (node.images || []).forEach((img, index) => {
+      media.push({
+        id: img.id || uid(),
+        category_id: node.id,
+        name: img.name || "image",
+        url: img.storagePath ? null : (img.url || img.dataUrl || null),
+        storage_path: img.storagePath || null,
+        sort_order: index,
+        updated_at: new Date().toISOString()
+      });
+    });
+
+    (node.children || []).forEach((child, index) => visit(child, node.id, index));
+  }
+
+  (root.children || []).forEach((child, index) => visit(child, "root", index));
+  return { categories, media };
+}
+
+function buildTree(categories, media) {
+  const root = { id: "root", name: "Maintenance Hub", images: [], children: [] };
+  const byId = new Map(categories.map(row => [
+    row.id,
+    { id: row.id, name: row.name, images: [], children: [] }
+  ]));
+
+  for (const item of media || []) {
+    const node = byId.get(item.category_id);
+    if (!node) continue;
+    node.images.push({
+      id: item.id,
+      name: item.name,
+      url: item.url || (item.storage_path ? publicStorageUrl(item.storage_path) : ""),
+      storagePath: item.storage_path || ""
+    });
+  }
+
+  const sortedCategories = [...categories].sort((a, b) => {
+    if ((a.parent_id || "") === (b.parent_id || "")) {
+      return (a.sort_order || 0) - (b.sort_order || 0);
+    }
+    return (a.parent_id || "").localeCompare(b.parent_id || "");
+  });
+
+  for (const row of sortedCategories) {
+    const node = byId.get(row.id);
+    const parent = row.parent_id ? byId.get(row.parent_id) : root;
+    if (parent) parent.children.push(node);
+  }
+
+  return { version: 2, updatedAt: new Date().toISOString(), root };
+}
+
 export function loadData() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
@@ -117,35 +210,32 @@ export function resetData() {
   return seed;
 }
 
-async function fetchRemoteRow() {
+async function fetchRemoteData() {
   if (!remoteEnabled()) return null;
-  const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${SUPABASE_ROW_ID}&select=id,data,updated_at`;
-  const res = await fetch(url, {
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      Accept: "application/json"
-    }
-  });
-  if (!res.ok) return null;
-  const rows = await res.json();
-  return rows && rows.length ? rows[0] : null;
+
+  const categoryQuery = "select=id,parent_id,name,sort_order,updated_at&order=sort_order.asc";
+  const mediaQuery = "select=id,category_id,name,url,storage_path,sort_order,updated_at&order=sort_order.asc";
+  const [categories, media] = await Promise.all([
+    requestJson(tableUrl(SUPABASE_CONFIG.categoriesTable, categoryQuery), {
+      headers: apiHeaders({ Accept: "application/json" })
+    }),
+    requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, mediaQuery), {
+      headers: apiHeaders({ Accept: "application/json" })
+    })
+  ]);
+
+  if (!categories?.length) return null;
+  return buildTree(categories, media || []);
 }
 
 export async function syncFromRemote(onUpdate) {
   if (!remoteEnabled()) return;
   try {
-    const row = await fetchRemoteRow();
-    if (!row || !row.data) return;
+    const remoteData = await fetchRemoteData();
+    if (!remoteData) return;
 
-    const local = loadData();
-    const remoteTime = Date.parse(row.data.updatedAt || row.updated_at || 0);
-    const localTime = Date.parse(local.updatedAt || 0);
-
-    if (remoteTime > localTime) {
-      setLocalDataRaw(row.data);
-      if (typeof onUpdate === "function") onUpdate(row.data);
-    }
+    setLocalDataRaw(remoteData);
+    if (typeof onUpdate === "function") onUpdate(remoteData);
   } catch {
     // ignore sync errors
   }
@@ -154,26 +244,95 @@ export async function syncFromRemote(onUpdate) {
 export async function pushRemoteData(data) {
   if (!remoteEnabled()) return;
   try {
-    const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?on_conflict=id`;
-    await fetch(url, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates,return=minimal"
-      },
-      body: JSON.stringify({
-        id: SUPABASE_ROW_ID,
-        data,
-        updated_at: data.updatedAt
-      })
-    });
+    const { categories, media } = flattenTree(data.root);
+
+    if (categories.length) {
+      await requestJson(tableUrl(SUPABASE_CONFIG.categoriesTable, "on_conflict=id"), {
+        method: "POST",
+        headers: apiHeaders({
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        }),
+        body: JSON.stringify(categories)
+      });
+    }
+
+    if (media.length) {
+      await requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, "on_conflict=id"), {
+        method: "POST",
+        headers: apiHeaders({
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        }),
+        body: JSON.stringify(media)
+      });
+    }
+
+    await deleteRowsNotIn(SUPABASE_CONFIG.mediaTable, media.map(item => item.id));
+    await deleteRowsNotIn(SUPABASE_CONFIG.categoriesTable, categories.map(item => item.id));
   } catch {
     // ignore sync errors
   }
 }
 
+async function deleteRowsNotIn(table, ids) {
+  const filter = ids.length
+    ? `id=not.in.(${ids.map(id => `"${String(id).replaceAll('"', '\\"')}"`).join(",")})`
+    : "id=not.is.null";
+
+  await requestJson(tableUrl(table, filter), {
+    method: "DELETE",
+    headers: apiHeaders({ Prefer: "return=minimal" })
+  });
+}
+
+export async function uploadMediaFile(file, categoryId) {
+  const id = crypto.randomUUID?.() || uid();
+  if (!remoteEnabled()) {
+    return {
+      id,
+      name: file.name,
+      dataUrl: await fileToDataUrl(file)
+    };
+  }
+
+  const safeName = file.name.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "image";
+  const path = `${categoryId}/${id}-${safeName}`;
+  const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
+
+  await requestJson(url, {
+    method: "POST",
+    headers: apiHeaders({
+      "Content-Type": file.type || "application/octet-stream",
+      "x-upsert": "false"
+    }),
+    body: file
+  });
+
+  return {
+    id,
+    name: file.name,
+    url: publicStorageUrl(path),
+    storagePath: path
+  };
+}
+
+export async function removeStorageObject(path) {
+  if (!remoteEnabled() || !path) return;
+  try {
+    const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}`;
+    await fetch(url, {
+      method: "DELETE",
+      headers: {
+        ...apiHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ prefixes: [path] })
+    });
+  } catch {
+    // ignore storage cleanup errors
+  }
+}
 
 export function findNode(root, id, path = []) {
   if (!root) return null;

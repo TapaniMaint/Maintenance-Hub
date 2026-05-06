@@ -1,7 +1,7 @@
 import {
   loadData, saveData, resetData, syncFromRemote,
   findNode, countDescendants, removeNodeById,
-  fileToDataUrl
+  uploadMediaFile, removeStorageObject
 } from "./app.js";
 
 const EXPANDED_KEY_ADMIN = "maintenanceHubExpanded_admin_v1";
@@ -146,6 +146,16 @@ function findParent(root, id) {
     if (found) return found;
   }
   return null;
+}
+
+function collectStoragePaths(node, paths = []) {
+  for (const img of node?.images || []) {
+    if (img.storagePath) paths.push(img.storagePath);
+  }
+  for (const child of node?.children || []) {
+    collectStoragePaths(child, paths);
+  }
+  return paths;
 }
 
 function pathText(path) {
@@ -298,8 +308,9 @@ function renderSelectedPanel() {
     del.textContent = "Remove";
     del.className = "danger";
     del.style.padding = "6px 8px";
-    del.addEventListener("click", (e) => {
+    del.addEventListener("click", async (e) => {
       e.stopPropagation();
+      await removeStorageObject(img.storagePath);
       node.images.splice(idx, 1);
       saveData(data);
       data = loadData();
@@ -409,8 +420,13 @@ document.getElementById("addChildBtn").addEventListener("click", () => {
   renderTree();
 });
 
-document.getElementById("deleteBtn").addEventListener("click", () => {
+document.getElementById("deleteBtn").addEventListener("click", async () => {
   if (selectedId === "root") return;
+
+  const found = findNode(data.root, selectedId);
+  for (const path of collectStoragePaths(found?.node)) {
+    await removeStorageObject(path);
+  }
 
   removeNodeById(data.root, selectedId);
   selectedId = data.root.children[0]?.id || "root";
@@ -429,12 +445,7 @@ document.getElementById("addImagesBtn").addEventListener("click", async () => {
 
   found.node.images = found.node.images || [];
   for (const f of files) {
-    const dataUrl = await fileToDataUrl(f);
-    found.node.images.push({
-      id: crypto.randomUUID?.() || String(Date.now()),
-      name: f.name,
-      dataUrl
-    });
+    found.node.images.push(await uploadMediaFile(f, selectedId));
   }
 
   elImgInput.value = "";
@@ -443,9 +454,13 @@ document.getElementById("addImagesBtn").addEventListener("click", async () => {
   renderTree();
 });
 
-document.getElementById("clearImagesBtn").addEventListener("click", () => {
+document.getElementById("clearImagesBtn").addEventListener("click", async () => {
   const found = findNode(data.root, selectedId);
   if (!found) return;
+
+  for (const img of found.node.images || []) {
+    await removeStorageObject(img.storagePath);
+  }
 
   found.node.images = [];
   saveData(data);
