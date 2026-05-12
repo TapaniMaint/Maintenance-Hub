@@ -1,14 +1,37 @@
 import {
-  loadData, saveData, resetData, syncFromRemote,
-  findNode, countDescendants, removeNodeById,
-  uploadMediaFile, removeStorageObject
+  loadData,
+  saveData,
+  syncFromRemote,
+  findNode,
+  removeNodeById,
+  uploadMediaFile,
+  removeStorageObject
 } from "./app.js";
+import {
+  getUser,
+  isAdminUser,
+  onAuthStateChange,
+  signInWithPassword,
+  signOut
+} from "./supabase-client.js";
 
 const EXPANDED_KEY_ADMIN = "maintenanceHubExpanded_admin_v1";
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
 
 let data = loadData();
 let selectedId = data.root.children[0]?.id || "root";
-let expanded = loadExpanded(); // collapsed by default
+let expanded = loadExpanded();
+let adminEnabled = false;
+
+const authForm = document.getElementById("authForm");
+const adminWorkspace = document.getElementById("adminWorkspace");
+const signOutBtn = document.getElementById("signOutBtn");
+const authSummary = document.getElementById("authSummary");
+const statusBanner = document.getElementById("statusBanner");
+const emailInput = document.getElementById("adminEmail");
+const passwordInput = document.getElementById("adminPassword");
 
 function applyRemote(next) {
   data = next;
@@ -18,20 +41,26 @@ function applyRemote(next) {
   renderTree();
 }
 
-// Sidebar drawer toggle (mobile)
 const treeToggleBtn = document.getElementById("treeToggleBtn");
 const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 
-function closeSidebar() { document.body.classList.remove("sidebar-open"); }
-function toggleSidebar() { document.body.classList.toggle("sidebar-open"); }
+function closeSidebar() {
+  document.body.classList.remove("sidebar-open");
+}
+
+function toggleSidebar() {
+  if (!adminEnabled) return;
+  document.body.classList.toggle("sidebar-open");
+}
 
 treeToggleBtn?.addEventListener("click", toggleSidebar);
 overlay?.addEventListener("click", closeSidebar);
 sidebarCloseBtn?.addEventListener("click", closeSidebar);
-window.addEventListener("resize", () => { if (window.innerWidth > 720) closeSidebar(); });
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 720) closeSidebar();
+});
 
-// Lightbox
 const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
 const lightboxCaption = document.getElementById("lightboxCaption");
@@ -43,80 +72,58 @@ function openLightbox(src, caption = "") {
   document.body.style.overflow = "hidden";
 }
 
-lightbox.addEventListener("click", () => {
+lightbox?.addEventListener("click", () => {
   lightbox.classList.remove("open");
   lightboxImg.src = "";
   document.body.style.overflow = "";
 });
 
 function normalizeOneDriveUrl(url) {
-  const u = url.trim();
-  if (!u) return "";
+  const trimmed = url.trim();
+  if (!trimmed) return "";
 
-  // If user already added download=1, leave it.
-  if (u.includes("download=1")) return u;
+  const parsed = new URL(trimmed, window.location.href);
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error("Only HTTP and HTTPS image links are allowed.");
+  }
 
-  // Best-effort: append download=1 (works for many OneDrive/SharePoint links)
-  if (u.includes("?")) return u + "&download=1";
-  return u + "?download=1";
+  if (/onedrive|sharepoint/i.test(parsed.hostname) && !parsed.searchParams.has("download")) {
+    parsed.searchParams.set("download", "1");
+  }
+
+  return parsed.href;
 }
 
+function safeImageUrl(value) {
+  if (typeof value !== "string") return "";
 
-// DOM
-const elImgUrlInput = document.getElementById("imgUrlInput");
-const elImgUrlName = document.getElementById("imgUrlName");
-const elAddMasterInput = document.getElementById("addMasterInput");
-const elTree = document.getElementById("tree");
-const elUpdatedAt = document.getElementById("updatedAt");
-const elSelectedPath = document.getElementById("selectedPath");
-const elRenameInput = document.getElementById("renameInput");
-const elAddChildInput = document.getElementById("addChildInput");
-const elGallery = document.getElementById("gallery");
-const elImgInput = document.getElementById("imgInput");
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("data:image/")) return trimmed;
+  if (trimmed.startsWith("blob:")) return trimmed;
 
-// ---------- Floating Page Switcher ----------
-const pageFab = document.getElementById("pageFab");
-const pageFabBtn = document.getElementById("pageFabBtn");
-const pageFabBackdrop = document.getElementById("pageFabBackdrop");
-const fabUserLink = document.getElementById("fabUserLink");
-const fabAdminLink = document.getElementById("fabAdminLink");
+  try {
+    const parsed = new URL(trimmed, window.location.href);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {
+    return "";
+  }
 
-// Highlight current page + disable clicking it
-const path = location.pathname.toLowerCase();
-const isAdminPage = path === "/admin" || path.endsWith("/admin/") || path.endsWith("/admin.html");
-
-if (isAdminPage) {
-  fabAdminLink && (fabAdminLink.style.opacity = "0.55");
-  fabAdminLink && (fabAdminLink.style.pointerEvents = "none");
-} else {
-  fabUserLink && (fabUserLink.style.opacity = "0.55");
-  fabUserLink && (fabUserLink.style.pointerEvents = "none");
+  return "";
 }
 
-
-function closeFab() {
-  pageFab.classList.remove("open");
-}
-function toggleFab() {
-  pageFab.classList.toggle("open");
+function setStatus(message, type = "info") {
+  if (!statusBanner) return;
+  statusBanner.textContent = message;
+  statusBanner.className = `status-banner ${type}`;
 }
 
-pageFabBtn?.addEventListener("click", (e) => {
-  e.stopPropagation();
-  toggleFab();
-});
-
-pageFabBackdrop?.addEventListener("click", closeFab);
-
-// Close if user taps anywhere else
-document.addEventListener("click", (e) => {
-  if (!pageFab.contains(e.target)) closeFab();
-});
-
-// Optional: close after picking a link (nice on mobile)
-fabUserLink?.addEventListener("click", closeFab);
-fabAdminLink?.addEventListener("click", closeFab);
-
+function setAdminEnabledState(enabled) {
+  adminEnabled = enabled;
+  adminWorkspace?.classList.toggle("hidden", !enabled);
+}
 
 function loadExpanded() {
   try {
@@ -133,15 +140,52 @@ function saveExpanded() {
   localStorage.setItem(EXPANDED_KEY_ADMIN, JSON.stringify([...expanded]));
 }
 
+const elImgUrlInput = document.getElementById("imgUrlInput");
+const elImgUrlName = document.getElementById("imgUrlName");
+const elAddMasterInput = document.getElementById("addMasterInput");
+const elTree = document.getElementById("tree");
+const elUpdatedAt = document.getElementById("updatedAt");
+const elSelectedPath = document.getElementById("selectedPath");
+const elRenameInput = document.getElementById("renameInput");
+const elAddChildInput = document.getElementById("addChildInput");
+const elGallery = document.getElementById("gallery");
+const elImgInput = document.getElementById("imgInput");
+
+const pageFab = document.getElementById("pageFab");
+const pageFabBtn = document.getElementById("pageFabBtn");
+const pageFabBackdrop = document.getElementById("pageFabBackdrop");
+const fabUserLink = document.getElementById("fabUserLink");
+
+if (pageFab && pageFabBtn && pageFabBackdrop && fabUserLink) {
+  function closeFab() {
+    pageFab.classList.remove("open");
+  }
+
+  function toggleFab() {
+    pageFab.classList.toggle("open");
+  }
+
+  pageFabBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleFab();
+  });
+
+  pageFabBackdrop.addEventListener("click", closeFab);
+  document.addEventListener("click", (event) => {
+    if (!pageFab.contains(event.target)) closeFab();
+  });
+  fabUserLink.addEventListener("click", closeFab);
+}
+
 function fmtUpdated() {
   elUpdatedAt.textContent = new Date(data.updatedAt).toLocaleString();
 }
 
 function findParent(root, id) {
   if (!root?.children) return null;
-  for (let i = 0; i < root.children.length; i += 1) {
-    const child = root.children[i];
-    if (child.id === id) return { parent: root, index: i };
+  for (let index = 0; index < root.children.length; index += 1) {
+    const child = root.children[index];
+    if (child.id === id) return { parent: root, index };
     const found = findParent(child, id);
     if (found) return found;
   }
@@ -159,10 +203,12 @@ function collectStoragePaths(node, paths = []) {
 }
 
 function pathText(path) {
-  return path.map(n => n.name).join(" → ");
+  return path.map((node) => node.name).join(" -> ");
 }
 
 function renderTree() {
+  if (!adminEnabled) return;
+
   elTree.innerHTML = "";
   fmtUpdated();
   for (const child of data.root.children) renderNodeRow(child, 0);
@@ -172,7 +218,7 @@ function renderTree() {
 function renderNodeRow(node, depth) {
   const row = document.createElement("div");
   row.className = "tree-item" + (node.id === selectedId ? " selected" : "");
-  row.style.marginLeft = (depth * 12) + "px";
+  row.style.marginLeft = `${depth * 12}px`;
   row.draggable = true;
   row.dataset.depth = String(depth);
   if (depth > 0) row.classList.add(`depth-${Math.min(depth, 6)}`);
@@ -186,21 +232,13 @@ function renderNodeRow(node, depth) {
 
   const meta = document.createElement("div");
   meta.className = "meta";
-  const kids = (node.children || []).length;
-  const imgs = (node.images || []).length;
-  meta.textContent = `(${kids} child, ${imgs} img)`;
+  meta.textContent = `(${(node.children || []).length} child, ${(node.images || []).length} img)`;
 
   left.appendChild(name);
   left.appendChild(meta);
-
-  const right = document.createElement("div");
-  // right.className = "badge";
-  
-
   row.appendChild(left);
-  row.appendChild(right);
+  row.appendChild(document.createElement("div"));
 
-  // Click row: select + toggle expand/collapse (NO auto close of sidebar)
   row.addEventListener("click", () => {
     selectedId = node.id;
 
@@ -213,23 +251,23 @@ function renderNodeRow(node, depth) {
     renderTree();
   });
 
-  row.addEventListener("dragstart", (e) => {
+  row.addEventListener("dragstart", (event) => {
     row.classList.add("dragging");
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", node.id);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", node.id);
   });
 
   row.addEventListener("dragend", () => {
     row.classList.remove("dragging");
   });
 
-  row.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+  row.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
   });
 
-  row.addEventListener("dragenter", (e) => {
-    e.preventDefault();
+  row.addEventListener("dragenter", (event) => {
+    event.preventDefault();
     row.classList.add("drag-over");
   });
 
@@ -237,17 +275,16 @@ function renderNodeRow(node, depth) {
     row.classList.remove("drag-over");
   });
 
-  row.addEventListener("drop", (e) => {
-    e.preventDefault();
+  row.addEventListener("drop", async (event) => {
+    event.preventDefault();
     row.classList.remove("drag-over");
 
-    const draggedId = e.dataTransfer.getData("text/plain");
+    const draggedId = event.dataTransfer.getData("text/plain");
     if (!draggedId || draggedId === node.id) return;
 
     const draggedInfo = findParent(data.root, draggedId);
     const targetInfo = findParent(data.root, node.id);
     if (!draggedInfo || !targetInfo) return;
-
     if (draggedInfo.parent.id !== targetInfo.parent.id) return;
 
     const siblings = targetInfo.parent.children;
@@ -256,15 +293,13 @@ function renderNodeRow(node, depth) {
     if (draggedInfo.index < targetInfo.index) insertIndex -= 1;
     siblings.splice(insertIndex, 0, moved);
 
-    saveData(data);
-    data = loadData();
-    renderTree();
+    await persistData();
   });
 
   elTree.appendChild(row);
 
   if ((node.children || []).length > 0 && expanded.has(node.id)) {
-    for (const c of node.children || []) renderNodeRow(c, depth + 1);
+    for (const child of node.children || []) renderNodeRow(child, depth + 1);
   }
 }
 
@@ -273,116 +308,188 @@ function renderSelectedPanel() {
   if (!found) return;
 
   const { node, path } = found;
-
   elSelectedPath.textContent = pathText(path);
   elRenameInput.value = node.name;
-
-  // Gallery
   elGallery.innerHTML = "";
+
   const imgs = node.images || [];
   if (imgs.length === 0) {
-    const p = document.createElement("div");
-    p.className = "small";
-    p.textContent = "No images on this node.";
-    elGallery.appendChild(p);
+    const empty = document.createElement("div");
+    empty.className = "small";
+    empty.textContent = "No images on this node.";
+    elGallery.appendChild(empty);
     return;
   }
 
-  imgs.forEach((img, idx) => {
+  imgs.forEach((img, index) => {
+    const src = safeImageUrl(img.url || img.dataUrl || "");
+    if (!src) return;
+
     const card = document.createElement("div");
     card.className = "card";
 
     const image = document.createElement("img");
-    image.src = img.url || img.dataUrl || "";
+    image.src = src;
     image.alt = img.name || "image";
     image.style.cursor = "zoom-in";
-    image.addEventListener("click", () => openLightbox(img.url || img.dataUrl || "", img.name || ""))
+    image.addEventListener("click", () => openLightbox(src, img.name || ""));
 
     const cap = document.createElement("div");
     cap.className = "cap";
 
-    const left = document.createElement("span");
-    left.textContent = img.name || "image";
+    const label = document.createElement("span");
+    label.textContent = img.name || "image";
 
-    const del = document.createElement("button");
-    del.textContent = "Remove";
-    del.className = "danger";
-    del.style.padding = "6px 8px";
-    del.addEventListener("click", async (e) => {
-      e.stopPropagation();
+    const removeButton = document.createElement("button");
+    removeButton.textContent = "Remove";
+    removeButton.className = "danger";
+    removeButton.style.padding = "6px 8px";
+    removeButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
       await removeStorageObject(img.storagePath);
-      node.images.splice(idx, 1);
-      saveData(data);
-      data = loadData();
-      renderTree();
+      node.images.splice(index, 1);
+      await persistData();
     });
 
-    cap.appendChild(left);
-    cap.appendChild(del);
-
+    cap.appendChild(label);
+    cap.appendChild(removeButton);
     card.appendChild(image);
     card.appendChild(cap);
     elGallery.appendChild(card);
   });
 }
 
-// Buttons
-document.getElementById("addImgUrlBtn").addEventListener("click", () => {
+function validateUploadFiles(files) {
+  if (!files.length) {
+    throw new Error("Choose at least one image to upload.");
+  }
+
+  for (const file of files) {
+    const extension = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+    if (!ALLOWED_IMAGE_TYPES.has(file.type) || !ALLOWED_EXTENSIONS.includes(extension)) {
+      throw new Error(`Blocked upload: ${file.name} is not a supported JPG, PNG, GIF, or WebP image.`);
+    }
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+      throw new Error(`Blocked upload: ${file.name} exceeds the 5 MB limit.`);
+    }
+  }
+}
+
+async function persistData() {
+  try {
+    await saveData(data);
+    data = loadData();
+    renderTree();
+    setStatus("Changes saved to Supabase using the current admin session.", "success");
+  } catch (error) {
+    data = loadData();
+    renderTree();
+    setStatus(error.message || "Unable to save changes.", "error");
+    throw error;
+  }
+}
+
+async function refreshAuthState() {
+  const user = await getUser();
+  const admin = await isAdminUser();
+
+  if (!user) {
+    signOutBtn.hidden = true;
+    authSummary.textContent = "Write access stays blocked until an admin session is active.";
+    setAdminEnabledState(false);
+    setStatus("Public reads are available. Admin writes require sign-in.", "info");
+    return;
+  }
+
+  signOutBtn.hidden = false;
+  if (!admin) {
+    authSummary.textContent = `Signed in as ${user.email || "unknown user"}, but this account is not marked as an admin.`;
+    setAdminEnabledState(false);
+    setStatus("Sign in with a user whose app metadata contains the admin role.", "error");
+    return;
+  }
+
+  authSummary.textContent = `Signed in as ${user.email || "admin"} with Supabase Auth.`;
+  setAdminEnabledState(true);
+  setStatus("Admin session active. Supabase writes now use the user's access token.", "success");
+  renderTree();
+}
+
+authForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  setStatus("Signing in...", "info");
+
+  try {
+    await signInWithPassword(emailInput.value.trim(), passwordInput.value);
+    passwordInput.value = "";
+    await refreshAuthState();
+  } catch (error) {
+    setAdminEnabledState(false);
+    setStatus(error.message || "Sign-in failed.", "error");
+  }
+});
+
+signOutBtn?.addEventListener("click", async () => {
+  try {
+    await signOut();
+    setAdminEnabledState(false);
+    setStatus("Signed out.", "info");
+    await refreshAuthState();
+  } catch (error) {
+    setStatus(error.message || "Sign-out failed.", "error");
+  }
+});
+
+document.getElementById("addImgUrlBtn")?.addEventListener("click", async () => {
   const found = findNode(data.root, selectedId);
   if (!found) return;
 
-  const rawUrl = (elImgUrlInput?.value || "").trim();
-  if (!rawUrl) return;
+  try {
+    const rawUrl = (elImgUrlInput?.value || "").trim();
+    if (!rawUrl) throw new Error("Paste an image URL first.");
 
-  const url = normalizeOneDriveUrl(rawUrl);
-  const name = (elImgUrlName?.value || "").trim() || "OneDrive image";
+    const url = normalizeOneDriveUrl(rawUrl);
+    const name = (elImgUrlName?.value || "").trim() || "Linked image";
 
-  found.node.images = found.node.images || [];
-  found.node.images.push({
-    id: crypto.randomUUID?.() || String(Date.now()),
-    name,
-    url
-  });
+    found.node.images = found.node.images || [];
+    found.node.images.push({
+      id: crypto.randomUUID?.() || String(Date.now()),
+      name,
+      url
+    });
 
-  if (elImgUrlInput) elImgUrlInput.value = "";
-  if (elImgUrlName) elImgUrlName.value = "";
+    if (elImgUrlInput) elImgUrlInput.value = "";
+    if (elImgUrlName) elImgUrlName.value = "";
 
-  saveData(data);
-  data = loadData();
-  renderTree();
+    await persistData();
+  } catch (error) {
+    setStatus(error.message || "Unable to add the image link.", "error");
+  }
 });
 
-
-document.getElementById("addMasterBtn").addEventListener("click", () => {
+document.getElementById("addMasterBtn")?.addEventListener("click", async () => {
   const name = (elAddMasterInput?.value || "").trim();
   if (!name) return;
 
   data.root.children = data.root.children || [];
   const newNode = {
-    id: (Math.random().toString(36).slice(2, 10) + Date.now().toString(36)),
+    id: `${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`,
     name,
     images: [],
     children: []
   };
 
   data.root.children.push(newNode);
-
-  // Optional: auto-select the new master category
   selectedId = newNode.id;
-
-  // Optional: auto-expand it (won't matter until it has children)
   expanded.add(newNode.id);
   saveExpanded();
-
   if (elAddMasterInput) elAddMasterInput.value = "";
 
-  saveData(data);
-  data = loadData();
-  renderTree();
+  await persistData();
 });
 
-
-document.getElementById("renameBtn").addEventListener("click", () => {
+document.getElementById("renameBtn")?.addEventListener("click", async () => {
   const found = findNode(data.root, selectedId);
   if (!found) return;
 
@@ -390,12 +497,10 @@ document.getElementById("renameBtn").addEventListener("click", () => {
   if (!name) return;
 
   found.node.name = name;
-  saveData(data);
-  data = loadData();
-  renderTree();
+  await persistData();
 });
 
-document.getElementById("addChildBtn").addEventListener("click", () => {
+document.getElementById("addChildBtn")?.addEventListener("click", async () => {
   const found = findNode(data.root, selectedId);
   if (!found) return;
 
@@ -404,79 +509,79 @@ document.getElementById("addChildBtn").addEventListener("click", () => {
 
   found.node.children = found.node.children || [];
   found.node.children.push({
-    id: (Math.random().toString(36).slice(2, 10) + Date.now().toString(36)),
+    id: `${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`,
     name,
     images: [],
     children: []
   });
 
-  // expand parent so the new child is visible
   expanded.add(found.node.id);
   saveExpanded();
-
   elAddChildInput.value = "";
-  saveData(data);
-  data = loadData();
-  renderTree();
+
+  await persistData();
 });
 
-document.getElementById("deleteBtn").addEventListener("click", async () => {
+document.getElementById("deleteBtn")?.addEventListener("click", async () => {
   if (selectedId === "root") return;
 
   const found = findNode(data.root, selectedId);
-  for (const path of collectStoragePaths(found?.node)) {
-    await removeStorageObject(path);
+  if (!found) return;
+
+  try {
+    for (const path of collectStoragePaths(found.node)) {
+      await removeStorageObject(path);
+    }
+
+    removeNodeById(data.root, selectedId);
+    selectedId = data.root.children[0]?.id || "root";
+    await persistData();
+  } catch (error) {
+    setStatus(error.message || "Unable to delete the selected node.", "error");
   }
-
-  removeNodeById(data.root, selectedId);
-  selectedId = data.root.children[0]?.id || "root";
-
-  saveData(data);
-  data = loadData();
-  renderTree();
 });
 
-document.getElementById("addImagesBtn").addEventListener("click", async () => {
+document.getElementById("addImagesBtn")?.addEventListener("click", async () => {
   const found = findNode(data.root, selectedId);
   if (!found) return;
 
-  const files = Array.from(elImgInput.files || []);
-  if (files.length === 0) return;
+  try {
+    const files = Array.from(elImgInput.files || []);
+    validateUploadFiles(files);
 
-  found.node.images = found.node.images || [];
-  for (const f of files) {
-    found.node.images.push(await uploadMediaFile(f, selectedId));
+    found.node.images = found.node.images || [];
+    for (const file of files) {
+      found.node.images.push(await uploadMediaFile(file, selectedId));
+    }
+
+    elImgInput.value = "";
+    await persistData();
+  } catch (error) {
+    setStatus(error.message || "Upload failed.", "error");
   }
-
-  elImgInput.value = "";
-  saveData(data);
-  data = loadData();
-  renderTree();
 });
 
-document.getElementById("clearImagesBtn").addEventListener("click", async () => {
+document.getElementById("clearImagesBtn")?.addEventListener("click", async () => {
   const found = findNode(data.root, selectedId);
   if (!found) return;
 
-  for (const img of found.node.images || []) {
-    await removeStorageObject(img.storagePath);
-  }
+  try {
+    for (const img of found.node.images || []) {
+      await removeStorageObject(img.storagePath);
+    }
 
-  found.node.images = [];
-  saveData(data);
-  data = loadData();
-  renderTree();
+    found.node.images = [];
+    await persistData();
+  } catch (error) {
+    setStatus(error.message || "Unable to clear images.", "error");
+  }
 });
 
-// document.getElementById("resetBtn").addEventListener("click", () => {
-//   data = resetData();
-//   selectedId = data.root.children[0]?.id || "root";
-//   expanded = new Set();
-//   localStorage.removeItem(EXPANDED_KEY_ADMIN);
-//   renderTree();
-// });
+onAuthStateChange(() => {
+  void refreshAuthState();
+});
 
 syncFromRemote(applyRemote);
 setInterval(() => syncFromRemote(applyRemote), 15000);
 
-renderTree();
+void refreshAuthState();

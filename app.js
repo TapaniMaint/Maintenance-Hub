@@ -1,4 +1,5 @@
 import { SUPABASE_CONFIG } from "./supabase-config.js";
+import { requireAdminAccessToken } from "./supabase-client.js";
 
 const STORE_KEY = "maintenanceHubData_v1";
 
@@ -87,12 +88,17 @@ function setLocalDataRaw(data) {
   localStorage.setItem(STORE_KEY, JSON.stringify(data));
 }
 
-function apiHeaders(extra = {}) {
-  return {
+async function apiHeaders({ admin = false, ...extra } = {}) {
+  const headers = {
     apikey: SUPABASE_CONFIG.anonKey,
-    Authorization: `Bearer ${SUPABASE_CONFIG.anonKey}`,
     ...extra
   };
+
+  if (admin) {
+    headers.Authorization = `Bearer ${await requireAdminAccessToken()}`;
+  }
+
+  return headers;
 }
 
 function tableUrl(table, query = "") {
@@ -198,10 +204,19 @@ export function loadData() {
   }
 }
 
-export function saveData(data) {
+export async function saveData(data) {
   data.updatedAt = new Date().toISOString();
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
-  void pushRemoteData(data);
+  const previousRaw = localStorage.getItem(STORE_KEY);
+  const nextRaw = JSON.stringify(data);
+  localStorage.setItem(STORE_KEY, nextRaw);
+
+  try {
+    await pushRemoteData(data);
+  } catch (error) {
+    if (previousRaw === null) localStorage.removeItem(STORE_KEY);
+    else localStorage.setItem(STORE_KEY, previousRaw);
+    throw error;
+  }
 }
 
 export function resetData() {
@@ -217,10 +232,10 @@ async function fetchRemoteData() {
   const mediaQuery = "select=id,category_id,name,url,storage_path,sort_order,updated_at&order=sort_order.asc";
   const [categories, media] = await Promise.all([
     requestJson(tableUrl(SUPABASE_CONFIG.categoriesTable, categoryQuery), {
-      headers: apiHeaders({ Accept: "application/json" })
+      headers: await apiHeaders({ Accept: "application/json" })
     }),
     requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, mediaQuery), {
-      headers: apiHeaders({ Accept: "application/json" })
+      headers: await apiHeaders({ Accept: "application/json" })
     })
   ]);
 
@@ -243,36 +258,34 @@ export async function syncFromRemote(onUpdate) {
 
 export async function pushRemoteData(data) {
   if (!remoteEnabled()) return;
-  try {
-    const { categories, media } = flattenTree(data.root);
+  const { categories, media } = flattenTree(data.root);
 
-    if (categories.length) {
-      await requestJson(tableUrl(SUPABASE_CONFIG.categoriesTable, "on_conflict=id"), {
-        method: "POST",
-        headers: apiHeaders({
-          "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates,return=minimal"
-        }),
-        body: JSON.stringify(categories)
-      });
-    }
-
-    if (media.length) {
-      await requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, "on_conflict=id"), {
-        method: "POST",
-        headers: apiHeaders({
-          "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates,return=minimal"
-        }),
-        body: JSON.stringify(media)
-      });
-    }
-
-    await deleteRowsNotIn(SUPABASE_CONFIG.mediaTable, media.map(item => item.id));
-    await deleteRowsNotIn(SUPABASE_CONFIG.categoriesTable, categories.map(item => item.id));
-  } catch {
-    // ignore sync errors
+  if (categories.length) {
+    await requestJson(tableUrl(SUPABASE_CONFIG.categoriesTable, "on_conflict=id"), {
+      method: "POST",
+      headers: await apiHeaders({
+        admin: true,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal"
+      }),
+      body: JSON.stringify(categories)
+    });
   }
+
+  if (media.length) {
+    await requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, "on_conflict=id"), {
+      method: "POST",
+      headers: await apiHeaders({
+        admin: true,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal"
+      }),
+      body: JSON.stringify(media)
+    });
+  }
+
+  await deleteRowsNotIn(SUPABASE_CONFIG.mediaTable, media.map(item => item.id));
+  await deleteRowsNotIn(SUPABASE_CONFIG.categoriesTable, categories.map(item => item.id));
 }
 
 async function deleteRowsNotIn(table, ids) {
@@ -282,7 +295,7 @@ async function deleteRowsNotIn(table, ids) {
 
   await requestJson(tableUrl(table, filter), {
     method: "DELETE",
-    headers: apiHeaders({ Prefer: "return=minimal" })
+    headers: await apiHeaders({ admin: true, Prefer: "return=minimal" })
   });
 }
 
@@ -302,7 +315,8 @@ export async function uploadMediaFile(file, categoryId) {
 
   await requestJson(url, {
     method: "POST",
-    headers: apiHeaders({
+    headers: await apiHeaders({
+      admin: true,
       "Content-Type": file.type || "application/octet-stream",
       "x-upsert": "false"
     }),
@@ -319,18 +333,18 @@ export async function uploadMediaFile(file, categoryId) {
 
 export async function removeStorageObject(path) {
   if (!remoteEnabled() || !path) return;
-  try {
-    const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}`;
-    await fetch(url, {
-      method: "DELETE",
-      headers: {
-        ...apiHeaders(),
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ prefixes: [path] })
-    });
-  } catch {
-    // ignore storage cleanup errors
+  const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}`;
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: await apiHeaders({
+      admin: true,
+      "Content-Type": "application/json"
+    }),
+    body: JSON.stringify({ prefixes: [path] })
+  });
+
+  if (!res.ok) {
+    throw new Error(`Supabase storage cleanup failed: ${res.status}`);
   }
 }
 

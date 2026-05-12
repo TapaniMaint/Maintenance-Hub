@@ -1,0 +1,23 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://zaxjhojgxwbldnwempzl.supabase.co wss://zaxjhojgxwbldnwempzl.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Cross-Origin-Opener-Policy: same-origin
+
+/admin
+  Basic-Auth: CHANGE_ME_ADMIN:CHANGE_ME_PASSWORD
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+/admin/*
+  Basic-Auth: CHANGE_ME_ADMIN:CHANGE_ME_PASSWORD
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+/admin.html
+  Basic-Auth: CHANGE_ME_ADMIN:CHANGE_ME_PASSWORD
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+*/

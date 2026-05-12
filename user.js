@@ -1,10 +1,10 @@
-import { loadData, findNode, countDescendants, syncFromRemote } from "./app.js";
+import { loadData, findNode, syncFromRemote } from "./app.js";
 
 const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
 
 let data = loadData();
 let selectedId = data.root.children[0]?.id || "root";
-let expanded = loadExpanded(); // collapsed by default
+let expanded = loadExpanded();
 
 function applyRemote(next) {
   data = next;
@@ -14,13 +14,17 @@ function applyRemote(next) {
   renderAll();
 }
 
-// ---------- Sidebar drawer toggle ----------
 const treeToggleBtn = document.getElementById("treeToggleBtn");
 const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 
-function closeSidebar() { document.body.classList.remove("sidebar-open"); }
-function toggleSidebar() { document.body.classList.toggle("sidebar-open"); }
+function closeSidebar() {
+  document.body.classList.remove("sidebar-open");
+}
+
+function toggleSidebar() {
+  document.body.classList.toggle("sidebar-open");
+}
 
 treeToggleBtn?.addEventListener("click", toggleSidebar);
 overlay?.addEventListener("click", closeSidebar);
@@ -29,7 +33,6 @@ window.addEventListener("resize", () => {
   if (window.innerWidth > 720) closeSidebar();
 });
 
-// ---------- Lightbox ----------
 const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
 const lightboxCaption = document.getElementById("lightboxCaption");
@@ -41,50 +44,39 @@ function openLightbox(src, caption = "") {
   document.body.style.overflow = "hidden";
 }
 
-lightbox.addEventListener("click", () => {
+lightbox?.addEventListener("click", () => {
   lightbox.classList.remove("open");
   lightboxImg.src = "";
   document.body.style.overflow = "";
 });
 
-
-// ---------- Floating Page Switcher (optional; safe if missing) ----------
 const pageFab = document.getElementById("pageFab");
 const pageFabBtn = document.getElementById("pageFabBtn");
 const pageFabBackdrop = document.getElementById("pageFabBackdrop");
 const fabUserLink = document.getElementById("fabUserLink");
-const fabAdminLink = document.getElementById("fabAdminLink");
 
-if (pageFab && pageFabBtn && pageFabBackdrop) {
-  const path = location.pathname.toLowerCase();
-const isAdminPage = path === "/admin" || path.endsWith("/admin/") || path.endsWith("/admin.html");
+if (pageFab && pageFabBtn && pageFabBackdrop && fabUserLink) {
+  fabUserLink.style.opacity = "0.55";
+  fabUserLink.style.pointerEvents = "none";
 
-if (isAdminPage) {
-  fabAdminLink && (fabAdminLink.style.opacity = "0.55");
-  fabAdminLink && (fabAdminLink.style.pointerEvents = "none");
-} else {
-  fabUserLink && (fabUserLink.style.opacity = "0.55");
-  fabUserLink && (fabUserLink.style.pointerEvents = "none");
-}
+  function closeFab() {
+    pageFab.classList.remove("open");
+  }
 
+  function toggleFab() {
+    pageFab.classList.toggle("open");
+  }
 
-
-  function closeFab() { pageFab.classList.remove("open"); }
-  function toggleFab() { pageFab.classList.toggle("open"); }
-
-  pageFabBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
+  pageFabBtn.addEventListener("click", (event) => {
+    event.stopPropagation();
     toggleFab();
   });
 
-  pageFabBackdrop.addEventListener("click", () => closeFab());
+  pageFabBackdrop.addEventListener("click", closeFab);
 
-  document.addEventListener("click", (e) => {
-    if (!pageFab.contains(e.target)) closeFab();
+  document.addEventListener("click", (event) => {
+    if (!pageFab.contains(event.target)) closeFab();
   });
-
-  fabUserLink?.addEventListener("click", closeFab);
-  fabAdminLink?.addEventListener("click", closeFab);
 }
 
 const elTree = document.getElementById("tree");
@@ -126,7 +118,7 @@ function renderSidebarTree() {
 function renderNodeRow(node, depth) {
   const row = document.createElement("div");
   row.className = "tree-item" + (node.id === selectedId ? " selected" : "");
-  row.style.marginLeft = (depth * 12) + "px";
+  row.style.marginLeft = `${depth * 12}px`;
   row.dataset.depth = String(depth);
   if (depth > 0) row.classList.add(`depth-${Math.min(depth, 6)}`);
 
@@ -139,19 +131,12 @@ function renderNodeRow(node, depth) {
 
   const meta = document.createElement("div");
   meta.className = "meta";
-  // meta.textContent = `${(node.children || []).length} child`;
 
   left.appendChild(name);
   left.appendChild(meta);
-
-  const right = document.createElement("div");
-  // right.className = "badge";
-  // right.textContent = `${countDescendants(node)} under`;
-
   row.appendChild(left);
-  row.appendChild(right);
+  row.appendChild(document.createElement("div"));
 
-  // click row: select + toggle expand/collapse 
   row.addEventListener("click", () => {
     selectedId = node.id;
 
@@ -167,8 +152,28 @@ function renderNodeRow(node, depth) {
   elTree.appendChild(row);
 
   if ((node.children || []).length > 0 && expanded.has(node.id)) {
-    for (const c of node.children) renderNodeRow(c, depth + 1);
+    for (const child of node.children) renderNodeRow(child, depth + 1);
   }
+}
+
+function safeImageUrl(value) {
+  if (typeof value !== "string") return "";
+
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("data:image/")) return trimmed;
+  if (trimmed.startsWith("blob:")) return trimmed;
+
+  try {
+    const parsed = new URL(trimmed, window.location.href);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.href;
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
 }
 
 function renderImagesOnly() {
@@ -178,36 +183,42 @@ function renderImagesOnly() {
   if (!found) return;
 
   const node = found.node;
+  const imgs = node.images || [];
 
   elGallery.innerHTML = "";
-  const imgs = node.images || [];
 
   if (elImgHint) {
     elImgHint.textContent = imgs.length ? "" : "No images on this category.";
   }
 
-  imgs.forEach((img) => {
+  for (const img of imgs) {
+    const src = safeImageUrl(img.url || img.dataUrl || "");
+    if (!src) continue;
+
     const card = document.createElement("div");
     card.className = "card";
 
     const image = document.createElement("img");
-    image.src = img.url || img.dataUrl || "";
+    image.src = src;
     image.alt = img.name || "image";
     image.style.cursor = "zoom-in";
-    image.addEventListener("click", () => {
-      openLightbox(img.url || img.dataUrl || "", img.name || "");
-    });
-
-
+    image.addEventListener("click", () => openLightbox(src, img.name || ""));
 
     const cap = document.createElement("div");
     cap.className = "cap";
-    cap.innerHTML = `<span>${img.name || "image"}</span><span></span>`;
 
+    const label = document.createElement("span");
+    label.textContent = img.name || "image";
+
+    const spacer = document.createElement("span");
+    spacer.setAttribute("aria-hidden", "true");
+
+    cap.appendChild(label);
+    cap.appendChild(spacer);
     card.appendChild(image);
     card.appendChild(cap);
     elGallery.appendChild(card);
-  });
+  }
 }
 
 function renderAll() {

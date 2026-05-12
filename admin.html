@@ -11,96 +11,117 @@
 <body>
   <header>
     <div class="brand">
-      <img class="tapani-logo" src="images\logo.ico">
+      <img class="tapani-logo" src="images/logo.ico" alt="Tapani logo" />
       <b>Equipment Services</b>
     </div>
     <div class="row" style="gap:10px; justify-content:flex-end;">
-      <button class="iconbtn" id="treeToggleBtn" type="button">☰ Categories</button>
+      <button class="iconbtn" id="treeToggleBtn" type="button">Menu</button>
     </div>
   </header>
 
   <div class="overlay" id="overlay"></div>
+
   <div class="main">
-    <section class="panel sidebar">
-      <div class="row" style="justify-content: space-between;">
-        <div>
-          <div style="font-weight: 700;">Categories</div>
-          <div class="small">Click a row to expand/collapse. Click any node to edit.</div>
-          <div class="badge" id="updatedAt">—></div>
+    <section class="panel auth-shell">
+      <div class="auth-card">
+        <div class="auth-copy">
+          <h1>Admin Access</h1>
+          <p class="small">Sign in with a Supabase Auth account that has <code>app_metadata.role = "admin"</code>.</p>
         </div>
-        <div class="sidebar-header-actions">
-          <button class="iconbtn sidebar-close" id="sidebarCloseBtn" type="button" aria-label="Close sidebar">Close</button>
-        </div>
+        <form class="auth-form" id="authForm">
+          <input id="adminEmail" type="email" autocomplete="username" placeholder="Admin email" required />
+          <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Password" required />
+          <div class="row">
+            <button id="signInBtn" type="submit">Sign in</button>
+            <button id="signOutBtn" type="button" class="ghost" hidden>Sign out</button>
+          </div>
+        </form>
+        <div class="small" id="authSummary">Write access stays blocked until an admin session is active.</div>
+        <div class="status-banner" id="statusBanner" role="status" aria-live="polite"></div>
       </div>
-      <div class="tree" id="tree"></div>
     </section>
 
-    <section class="panel content">
-      <div class="panel" style="background: var(--panel2);">
-        <div style="font-weight: 700; margin-bottom: 8px;">Add Master Category</div>
-        <div class="row">
-          <input id="addMasterInput" type="text" placeholder="e.g., Excavator" />
-          <button id="addMasterBtn" type="button">Add</button>
+    <section class="workspace-shell hidden" id="adminWorkspace">
+      <section class="panel sidebar">
+        <div class="row" style="justify-content: space-between;">
+          <div>
+            <div style="font-weight: 700;">Categories</div>
+            <div class="small">Click a row to expand or collapse it. Signed-in admins can edit and reorder nodes.</div>
+            <div class="badge" id="updatedAt">--</div>
+          </div>
+          <div class="sidebar-header-actions">
+            <button class="iconbtn sidebar-close" id="sidebarCloseBtn" type="button" aria-label="Close sidebar">Close</button>
+          </div>
         </div>
-      </div>
-      <div class="panel" style="background: var(--panel2);">
-        <div style="font-weight: 700; margin-bottom: 8px;">Add child category</div>
-        <div class="row">
-          <input id="addChildInput" type="text" placeholder="New child name..." />
-          <button id="addChildBtn" type="button">Add</button>
-          <button id="deleteBtn" class="danger" type="button">Delete selected</button>
-        </div>
-        <div class="small-child-category">Delete removes the selected node and everything under it.</div>
-      </div>
+        <div class="tree" id="tree"></div>
+      </section>
 
-      <div class="panel" style="background: var(--panel2);">
-        <div class="selectedCategory">
-          <div style="font-weight: 700;">Selected Category</div>
-          <div class="small" id="selectedPath">—</div>
+      <section class="panel content">
+        <div class="panel" style="background: var(--panel2);">
+          <div style="font-weight: 700; margin-bottom: 8px;">Add Master Category</div>
+          <div class="row">
+            <input id="addMasterInput" type="text" placeholder="e.g., Excavator" />
+            <button id="addMasterBtn" type="button">Add</button>
+          </div>
         </div>
-        <div style="font-weight: 700; margin-bottom: 8px;">Rename</div>
-        <div class="row">
-          <input id="renameInput" type="text" placeholder="Node name..." />
-          <button id="renameBtn" type="button">Save</button>
+
+        <div class="panel" style="background: var(--panel2);">
+          <div style="font-weight: 700; margin-bottom: 8px;">Add Child Category</div>
+          <div class="row">
+            <input id="addChildInput" type="text" placeholder="New child name..." />
+            <button id="addChildBtn" type="button">Add</button>
+            <button id="deleteBtn" class="danger" type="button">Delete selected</button>
+          </div>
+          <div class="small-child-category">Delete removes the selected node and everything under it.</div>
         </div>
-      </div>
 
-
-      <div class="panel" style="background: var(--panel2);">
-        <div style="font-weight: 700; margin-bottom: 8px;">Images on this node</div>
-        <div class="row">
-          <input id="imgInput" type="file" accept="image/*" multiple />
-          <button id="addImagesBtn" type="button">Add images</button>
-          <button id="clearImagesBtn" class="danger" type="button">Clear images</button>
+        <div class="panel" style="background: var(--panel2);">
+          <div class="selectedCategory">
+            <div style="font-weight: 700;">Selected Category</div>
+            <div class="small" id="selectedPath">--</div>
+          </div>
+          <div style="font-weight: 700; margin-bottom: 8px;">Rename</div>
+          <div class="row">
+            <input id="renameInput" type="text" placeholder="Node name..." />
+            <button id="renameBtn" type="button">Save</button>
+          </div>
         </div>
-        <div style="height: 10px;"></div>
-        <div class="gallery" id="gallery"></div>
-      </div>
 
-      <div class="panel" style="background: var(--panel2); margin-bottom: 10px;">
-        <div style="font-weight: 700; margin-bottom: 8px;">Add image by OneDrive link</div>
-        <div class="row">
-          <input id="imgUrlInput" type="text" placeholder="Paste OneDrive share link (Anyone with link → View)" />
-          <input id="imgUrlName" type="text" placeholder="Optional name (e.g., Engine Bay)" style="max-width: 280px;" />
-          <button id="addImgUrlBtn" type="button">Add link</button>
+        <div class="panel" style="background: var(--panel2);">
+          <div style="font-weight: 700; margin-bottom: 8px;">Images on This Node</div>
+          <div class="row">
+            <input id="imgInput" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" multiple />
+            <button id="addImagesBtn" type="button">Add images</button>
+            <button id="clearImagesBtn" class="danger" type="button">Clear images</button>
+          </div>
+          <div class="small">Uploads are limited to JPG, PNG, GIF, or WebP files up to 5 MB each.</div>
+          <div style="height: 10px;"></div>
+          <div class="gallery" id="gallery"></div>
         </div>
-        <div class="small">Tip: If the image doesn’t load, try adding <b>&download=1</b> to the link.</div>
-      </div>
 
+        <div class="panel" style="background: var(--panel2); margin-bottom: 10px;">
+          <div style="font-weight: 700; margin-bottom: 8px;">Add Image by Link</div>
+          <div class="row">
+            <input id="imgUrlInput" type="text" placeholder="Paste an HTTPS image link" />
+            <input id="imgUrlName" type="text" placeholder="Optional name (e.g., Engine Bay)" style="max-width: 280px;" />
+            <button id="addImgUrlBtn" type="button">Add link</button>
+          </div>
+          <div class="small">OneDrive links are normalized with <code>download=1</code> when needed.</div>
+        </div>
+      </section>
     </section>
   </div>
 
   <div class="lightbox" id="lightbox">
-    <img id="lightboxImg" alt="">
+    <img id="lightboxImg" alt="" />
     <div class="caption" id="lightboxCaption"></div>
   </div>
+
   <div class="fab" id="pageFab">
     <div class="fab-menu" id="pageFabMenu">
       <a href="/index.html" id="fabUserLink">User Page</a>
-      <a href="/admin.html" id="fabAdminLink">Admin Page</a>
-
     </div>
-    <button class="fab-btn" id="pageFabBtn" type="button" aria-label="Pages">≡</button>
+    <button class="fab-btn" id="pageFabBtn" type="button" aria-label="Pages">+</button>
   </div>
   <div class="fab-backdrop" id="pageFabBackdrop"></div>
 
