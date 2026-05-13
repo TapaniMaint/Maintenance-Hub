@@ -334,8 +334,22 @@ button.danger:hover { border-color: #ff5a5a; }
   font-size: 12px;
   color: var(--muted);
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
+  min-width: 0;
+}
+
+.card .media-label {
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.card .media-remove {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  max-width: 76px;
 }
 
 /* --- Responsive + collapsible sidebar (drawer on mobile) --- */

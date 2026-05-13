@@ -372,12 +372,12 @@ function renderSelectedPanel() {
     cap.className = "cap";
 
     const label = document.createElement("span");
+    label.className = "media-label";
     label.textContent = img.name || mediaType;
 
     const removeButton = document.createElement("button");
     removeButton.textContent = "Remove";
-    removeButton.className = "danger";
-    removeButton.style.padding = "6px 8px";
+    removeButton.className = "danger media-remove";
     removeButton.addEventListener("click", async (event) => {
       event.stopPropagation();
       await removeStorageObject(img.storagePath);

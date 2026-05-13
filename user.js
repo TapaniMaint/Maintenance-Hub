@@ -239,6 +239,7 @@ function renderImagesOnly() {
     cap.className = "cap";
 
     const label = document.createElement("span");
+    label.className = "media-label";
     label.textContent = img.name || mediaType;
 
     const spacer = document.createElement("span");
