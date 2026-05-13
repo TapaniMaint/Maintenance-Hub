@@ -102,6 +102,8 @@ header a:hover { border-color: var(--accent); }
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: calc(100vh - 82px);
+  overflow: hidden;
 }
 
 .content {
@@ -216,9 +218,12 @@ button.danger:hover { border-color: #ff5a5a; }
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   max-height: calc(100vh - 190px);
   padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tree-item {
@@ -481,6 +486,7 @@ button.danger:hover { border-color: #ff5a5a; }
     flex: 0 0 auto;
     width: 100%;
     min-width: 0;
+    max-height: min(45vh, calc(100vh - 78px));
   }
 
   .card { width: 160px; }
@@ -613,6 +619,7 @@ button.danger:hover { border-color: #ff5a5a; }
     transform: translateX(-105%);
     transition: transform 160ms ease;
     border-radius: 0;
+    max-height: none;
   }
 
   body.sidebar-open .sidebar { transform: translateX(0); }
