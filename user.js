@@ -41,6 +41,7 @@ let imageZoom = 1;
 let imagePanX = 0;
 let imagePanY = 0;
 let imageDrag = null;
+const customImageZoom = window.matchMedia?.("(pointer: fine)")?.matches ?? true;
 
 function applyImageZoom() {
   lightboxImg.style.transform = `translate(${imagePanX}px, ${imagePanY}px) scale(${imageZoom})`;
@@ -86,6 +87,7 @@ lightbox?.addEventListener("click", () => {
 });
 lightboxImg?.addEventListener("click", (event) => {
   event.stopPropagation();
+  if (!customImageZoom) return;
   if (imageZoom === 1) {
     imageZoom = 2;
   } else {
@@ -95,6 +97,7 @@ lightboxImg?.addEventListener("click", (event) => {
   applyImageZoom();
 });
 lightboxImg?.addEventListener("wheel", (event) => {
+  if (!customImageZoom) return;
   event.preventDefault();
   event.stopPropagation();
   imageZoom = Math.min(4, Math.max(1, imageZoom + (event.deltaY < 0 ? 0.25 : -0.25)));
@@ -105,6 +108,7 @@ lightboxImg?.addEventListener("wheel", (event) => {
   applyImageZoom();
 });
 lightboxImg?.addEventListener("pointerdown", (event) => {
+  if (!customImageZoom) return;
   if (imageZoom <= 1) return;
   event.preventDefault();
   event.stopPropagation();
@@ -112,6 +116,7 @@ lightboxImg?.addEventListener("pointerdown", (event) => {
   imageDrag = { x: event.clientX, y: event.clientY, panX: imagePanX, panY: imagePanY };
 });
 lightboxImg?.addEventListener("pointermove", (event) => {
+  if (!customImageZoom) return;
   if (!imageDrag) return;
   imagePanX = imageDrag.panX + event.clientX - imageDrag.x;
   imagePanY = imageDrag.panY + event.clientY - imageDrag.y;

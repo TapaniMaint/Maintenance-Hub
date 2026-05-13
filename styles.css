@@ -614,7 +614,7 @@ header a {
 
 .lightbox img {
   cursor: zoom-in;
-  touch-action: none;
+  touch-action: pinch-zoom;
   transform-origin: center center;
 }
 
@@ -622,6 +622,7 @@ header a {
   cursor: grab;
   max-width: none;
   max-height: none;
+  touch-action: none;
 }
 
 .lightbox img[hidden],
