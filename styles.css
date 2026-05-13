@@ -338,12 +338,26 @@ button.danger:hover { border-color: #ff5a5a; }
 .content .panel > .row,
 .auth-form .row {
   justify-content: flex-start;
-  align-items: flex-end;
+  /* align-items: flex-end; */
 }
 
 .content .panel > .row > input[type="text"],
 .content .panel > .row > input[type="file"] {
-  flex: 1 1 220px;
+  /* flex: 1 1 220px; */
+  /* background: red; */
+  /* height: 100px; */
+}
+
+#addMasterInput,
+#addChildInput,
+#renameInput {
+  /* flex: 0 1 220px; */
+  max-width: 220px;
+}
+
+#imgInput {
+  /* flex: 0 1 380px; */
+  max-width: 380px;
 }
 
 .content .panel > .row > button,
@@ -532,15 +546,43 @@ button.danger:hover { border-color: #ff5a5a; }
 
   .content .row,
   .auth-form .row {
-    align-items: stretch;
+    align-items:flex-start;
     flex-direction: column;
   }
 
   .content .row > *,
   .auth-form .row > * {
-    width: 100%;
+    /* width: 100%; */
     max-width: 100%;
     flex: 1 1 auto;
+  }
+
+  #addMasterInput,
+  #addChildInput,
+  #renameInput,
+  #imgUrlInput,
+  #imgUrlName {
+    padding: 6px 9px;
+    min-height: 34px;
+    height: 34px;
+    font-size: 14px;
+    line-height: 1.2;
+    border-radius: 8px;
+  }
+  
+  #imgInput {
+    padding: 4px 8px;
+    min-height: 34px;
+    font-size: 12px;
+    line-height: 1.2;
+    border-radius: 8px;
+  }
+
+  #imgInput::file-selector-button {
+    padding: 4px 8px;
+    margin-right: 8px;
+    font-size: 12px;
+    line-height: 1.1;
   }
 
   .auth-form .row > button {
