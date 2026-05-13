@@ -289,7 +289,11 @@ function renderImagesOnly() {
     media.src = src;
     media.style.cursor = "zoom-in";
     if (mediaType === "video") {
-      media.controls = true;
+      media.controls = false;
+      media.muted = true;
+      media.defaultMuted = true;
+      media.loop = true;
+      media.autoplay = false;
       media.playsInline = true;
       media.preload = "metadata";
     } else {
