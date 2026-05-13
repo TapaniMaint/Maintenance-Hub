@@ -296,7 +296,7 @@ export async function uploadMediaFile(file, categoryId) {
     };
   }
 
-  const safeName = file.name.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "image";
+  const safeName = file.name.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "media";
   const path = `${categoryId}/${id}-${safeName}`;
   const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
 

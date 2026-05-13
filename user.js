@@ -32,10 +32,23 @@ window.addEventListener("resize", () => {
 // ---------- Lightbox ----------
 const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
+const lightboxVideo = document.getElementById("lightboxVideo");
 const lightboxCaption = document.getElementById("lightboxCaption");
 
-function openLightbox(src, caption = "") {
-  lightboxImg.src = src;
+function openLightbox(src, caption = "", mediaType = "image") {
+  if (mediaType === "video") {
+    lightboxImg.hidden = true;
+    lightboxImg.src = "";
+    lightboxVideo.hidden = false;
+    lightboxVideo.src = src;
+  } else {
+    lightboxVideo.hidden = true;
+    lightboxVideo.pause();
+    lightboxVideo.removeAttribute("src");
+    lightboxVideo.load();
+    lightboxImg.hidden = false;
+    lightboxImg.src = src;
+  }
   lightboxCaption.textContent = caption;
   lightbox.classList.add("open");
   document.body.style.overflow = "hidden";
@@ -44,8 +57,13 @@ function openLightbox(src, caption = "") {
 lightbox.addEventListener("click", () => {
   lightbox.classList.remove("open");
   lightboxImg.src = "";
+  lightboxVideo.pause();
+  lightboxVideo.removeAttribute("src");
+  lightboxVideo.load();
   document.body.style.overflow = "";
 });
+lightboxImg?.addEventListener("click", (event) => event.stopPropagation());
+lightboxVideo?.addEventListener("click", (event) => event.stopPropagation());
 
 
 // ---------- Floating Page Switcher (optional; safe if missing) ----------
@@ -171,6 +189,30 @@ function renderNodeRow(node, depth) {
   }
 }
 
+function safeMediaUrl(value) {
+  if (typeof value !== "string") return "";
+
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("data:image/") || trimmed.startsWith("data:video/")) return trimmed;
+  if (trimmed.startsWith("blob:")) return trimmed;
+
+  try {
+    const parsed = new URL(trimmed, window.location.href);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.href;
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function mediaTypeFor(item, src = "") {
+  const value = `${item?.name || ""} ${src || item?.url || item?.dataUrl || ""}`.toLowerCase();
+  if (value.startsWith("data:video/") || /\.(mp4|mov|webm|ogv)(?:[?#]|$)/i.test(value)) return "video";
+  return "image";
+}
+
 function renderImagesOnly() {
   if (!elGallery) return;
 
@@ -183,28 +225,41 @@ function renderImagesOnly() {
   const imgs = node.images || [];
 
   if (elImgHint) {
-    elImgHint.textContent = imgs.length ? "" : "No images on this category.";
+    elImgHint.textContent = imgs.length ? "" : "No media on this category.";
   }
 
   imgs.forEach((img) => {
     const card = document.createElement("div");
     card.className = "card";
 
-    const image = document.createElement("img");
-    image.src = img.url || img.dataUrl || "";
-    image.alt = img.name || "image";
-    image.style.cursor = "zoom-in";
-    image.addEventListener("click", () => {
-      openLightbox(img.url || img.dataUrl || "", img.name || "");
+    const src = safeMediaUrl(img.url || img.dataUrl || "");
+    if (!src) return;
+    const mediaType = mediaTypeFor(img, src);
+    const media = mediaType === "video" ? document.createElement("video") : document.createElement("img");
+    media.src = src;
+    media.style.cursor = "zoom-in";
+    if (mediaType === "video") {
+      media.controls = true;
+      media.playsInline = true;
+      media.preload = "metadata";
+    } else {
+      media.alt = img.name || "image";
+    }
+    media.addEventListener("click", () => {
+      openLightbox(src, img.name || "", mediaType);
     });
 
 
 
     const cap = document.createElement("div");
     cap.className = "cap";
-    cap.innerHTML = `<span>${img.name || "image"}</span><span></span>`;
+    const label = document.createElement("span");
+    label.textContent = img.name || mediaType;
+    const spacer = document.createElement("span");
+    cap.appendChild(label);
+    cap.appendChild(spacer);
 
-    card.appendChild(image);
+    card.appendChild(media);
     card.appendChild(cap);
     elGallery.appendChild(card);
   });

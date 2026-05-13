@@ -5,6 +5,12 @@ import {
 } from "./app.js";
 
 const EXPANDED_KEY_ADMIN = "maintenanceHubExpanded_admin_v1";
+const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
+const MAX_VIDEO_UPLOAD_BYTES = 100 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm", "video/ogg"]);
+const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+const ALLOWED_VIDEO_EXTENSIONS = [".mp4", ".mov", ".webm", ".ogv"];
 
 let data = loadData();
 let selectedId = data.root.children[0]?.id || "root";
@@ -34,10 +40,23 @@ window.addEventListener("resize", () => { if (window.innerWidth > 720) closeSide
 // Lightbox
 const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
+const lightboxVideo = document.getElementById("lightboxVideo");
 const lightboxCaption = document.getElementById("lightboxCaption");
 
-function openLightbox(src, caption = "") {
-  lightboxImg.src = src;
+function openLightbox(src, caption = "", mediaType = "image") {
+  if (mediaType === "video") {
+    lightboxImg.hidden = true;
+    lightboxImg.src = "";
+    lightboxVideo.hidden = false;
+    lightboxVideo.src = src;
+  } else {
+    lightboxVideo.hidden = true;
+    lightboxVideo.pause();
+    lightboxVideo.removeAttribute("src");
+    lightboxVideo.load();
+    lightboxImg.hidden = false;
+    lightboxImg.src = src;
+  }
   lightboxCaption.textContent = caption;
   lightbox.classList.add("open");
   document.body.style.overflow = "hidden";
@@ -46,8 +65,13 @@ function openLightbox(src, caption = "") {
 lightbox.addEventListener("click", () => {
   lightbox.classList.remove("open");
   lightboxImg.src = "";
+  lightboxVideo.pause();
+  lightboxVideo.removeAttribute("src");
+  lightboxVideo.load();
   document.body.style.overflow = "";
 });
+lightboxImg?.addEventListener("click", (event) => event.stopPropagation());
+lightboxVideo?.addEventListener("click", (event) => event.stopPropagation());
 
 function normalizeOneDriveUrl(url) {
   const u = url.trim();
@@ -59,6 +83,53 @@ function normalizeOneDriveUrl(url) {
   // Best-effort: append download=1 (works for many OneDrive/SharePoint links)
   if (u.includes("?")) return u + "&download=1";
   return u + "?download=1";
+}
+
+function safeMediaUrl(value) {
+  if (typeof value !== "string") return "";
+
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("data:image/") || trimmed.startsWith("data:video/")) return trimmed;
+  if (trimmed.startsWith("blob:")) return trimmed;
+
+  try {
+    const parsed = new URL(trimmed, window.location.href);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") return parsed.href;
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function mediaTypeFor(item, src = "") {
+  const value = `${item?.name || ""} ${src || item?.url || item?.dataUrl || ""}`.toLowerCase();
+  if (value.startsWith("data:video/") || /\.(mp4|mov|webm|ogv)(?:[?#]|$)/i.test(value)) return "video";
+  return "image";
+}
+
+function validateUploadFiles(files) {
+  if (!files.length) return;
+
+  for (const file of files) {
+    const dotIndex = file.name.lastIndexOf(".");
+    const extension = dotIndex >= 0 ? file.name.slice(dotIndex).toLowerCase() : "";
+    const isImageExt = ALLOWED_IMAGE_EXTENSIONS.includes(extension);
+    const isVideoExt = ALLOWED_VIDEO_EXTENSIONS.includes(extension);
+    const isImage = isImageExt && (!file.type || ALLOWED_IMAGE_TYPES.has(file.type));
+    const isVideo = isVideoExt && (!file.type || ALLOWED_VIDEO_TYPES.has(file.type));
+
+    if (!isImage && !isVideo) {
+      throw new Error(`Blocked upload: ${file.name} is not a supported image or video file.`);
+    }
+
+    const maxSize = isVideo ? MAX_VIDEO_UPLOAD_BYTES : MAX_IMAGE_UPLOAD_BYTES;
+    const maxSizeLabel = isVideo ? "100 MB" : "5 MB";
+    if (file.size > maxSize) {
+      throw new Error(`Blocked upload: ${file.name} exceeds the ${maxSizeLabel} limit.`);
+    }
+  }
 }
 
 
@@ -188,7 +259,7 @@ function renderNodeRow(node, depth) {
   meta.className = "meta";
   const kids = (node.children || []).length;
   const imgs = (node.images || []).length;
-  meta.textContent = `(${kids} child, ${imgs} img)`;
+  meta.textContent = `(${kids} child, ${imgs} media)`;
 
   left.appendChild(name);
   left.appendChild(meta);
@@ -283,7 +354,7 @@ function renderSelectedPanel() {
   if (imgs.length === 0) {
     const p = document.createElement("div");
     p.className = "small";
-    p.textContent = "No images on this node.";
+    p.textContent = "No media on this node.";
     elGallery.appendChild(p);
     return;
   }
@@ -292,17 +363,26 @@ function renderSelectedPanel() {
     const card = document.createElement("div");
     card.className = "card";
 
-    const image = document.createElement("img");
-    image.src = img.url || img.dataUrl || "";
-    image.alt = img.name || "image";
-    image.style.cursor = "zoom-in";
-    image.addEventListener("click", () => openLightbox(img.url || img.dataUrl || "", img.name || ""))
+    const src = safeMediaUrl(img.url || img.dataUrl || "");
+    if (!src) return;
+    const mediaType = mediaTypeFor(img, src);
+    const media = mediaType === "video" ? document.createElement("video") : document.createElement("img");
+    media.src = src;
+    media.style.cursor = "zoom-in";
+    if (mediaType === "video") {
+      media.controls = true;
+      media.playsInline = true;
+      media.preload = "metadata";
+    } else {
+      media.alt = img.name || "image";
+    }
+    media.addEventListener("click", () => openLightbox(src, img.name || "", mediaType));
 
     const cap = document.createElement("div");
     cap.className = "cap";
 
     const left = document.createElement("span");
-    left.textContent = img.name || "image";
+    left.textContent = img.name || mediaType;
 
     const del = document.createElement("button");
     del.textContent = "Remove";
@@ -320,7 +400,7 @@ function renderSelectedPanel() {
     cap.appendChild(left);
     cap.appendChild(del);
 
-    card.appendChild(image);
+    card.appendChild(media);
     card.appendChild(cap);
     elGallery.appendChild(card);
   });
@@ -335,7 +415,7 @@ document.getElementById("addImgUrlBtn").addEventListener("click", () => {
   if (!rawUrl) return;
 
   const url = normalizeOneDriveUrl(rawUrl);
-  const name = (elImgUrlName?.value || "").trim() || "OneDrive image";
+  const name = (elImgUrlName?.value || "").trim() || "OneDrive media";
 
   found.node.images = found.node.images || [];
   found.node.images.push({
@@ -440,18 +520,23 @@ document.getElementById("addImagesBtn").addEventListener("click", async () => {
   const found = findNode(data.root, selectedId);
   if (!found) return;
 
-  const files = Array.from(elImgInput.files || []);
-  if (files.length === 0) return;
+  try {
+    const files = Array.from(elImgInput.files || []);
+    if (files.length === 0) return;
+    validateUploadFiles(files);
 
-  found.node.images = found.node.images || [];
-  for (const f of files) {
-    found.node.images.push(await uploadMediaFile(f, selectedId));
+    found.node.images = found.node.images || [];
+    for (const f of files) {
+      found.node.images.push(await uploadMediaFile(f, selectedId));
+    }
+
+    elImgInput.value = "";
+    saveData(data);
+    data = loadData();
+    renderTree();
+  } catch (error) {
+    alert(error.message || "Upload failed.");
   }
-
-  elImgInput.value = "";
-  saveData(data);
-  data = loadData();
-  renderTree();
 });
 
 document.getElementById("clearImagesBtn").addEventListener("click", async () => {
