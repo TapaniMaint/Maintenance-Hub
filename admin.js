@@ -417,6 +417,7 @@ function renderSelectedPanel() {
 
     const card = document.createElement("div");
     card.className = "card";
+    if (mediaType === "video") card.classList.add("card-video");
 
     const media = mediaType === "video" ? document.createElement("video") : document.createElement("img");
     media.src = src;
@@ -433,6 +434,14 @@ function renderSelectedPanel() {
       media.alt = img.name || "image";
     }
     media.addEventListener("click", () => openLightbox(src, img.name || "", mediaType));
+
+    if (mediaType === "video") {
+      const badge = document.createElement("div");
+      badge.className = "video-badge";
+      badge.setAttribute("aria-hidden", "true");
+      badge.textContent = "VIDEO";
+      card.appendChild(badge);
+    }
 
     const cap = document.createElement("div");
     cap.className = "cap";
