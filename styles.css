@@ -546,6 +546,20 @@ button.danger:hover { border-color: #ff5a5a; }
 }
 .iconbtn:hover { border-color: var(--accent); }
 
+.sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.sidebar-action-btn {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--panel2);
+}
+
 .overlay {
   display: none;
   position: fixed;

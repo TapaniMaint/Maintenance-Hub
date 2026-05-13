@@ -50,6 +50,7 @@ const treeToggleBtn = document.getElementById("treeToggleBtn");
 const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 const sidebar = document.getElementById("sidebar");
+const collapseTreeBtn = document.getElementById("collapseTreeBtn");
 
 function isSidebarDrawer() {
   return window.innerWidth <= 980;
@@ -75,6 +76,11 @@ function toggleSidebar() {
 treeToggleBtn?.addEventListener("click", toggleSidebar);
 overlay?.addEventListener("click", closeSidebar);
 sidebarCloseBtn?.addEventListener("click", closeSidebar);
+collapseTreeBtn?.addEventListener("click", () => {
+  expanded.clear();
+  saveExpanded();
+  renderTree();
+});
 window.addEventListener("resize", () => {
   if (!isSidebarDrawer()) closeSidebar();
   else syncSidebarState();
