@@ -465,6 +465,7 @@ button.danger:hover { border-color: #ff5a5a; }
   .main {
     padding: 10px;
     gap: 10px;
+    flex-direction: column;
   }
 
   .workspace-shell {
