@@ -208,6 +208,56 @@ button.danger:hover { border-color: #ff5a5a; }
   color: #ff9696;
 }
 
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0,0,0,0.68);
+}
+
+.confirm-modal.open {
+  display: flex;
+}
+
+.confirm-dialog {
+  width: min(100%, 420px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 16px;
+  box-shadow: 0 18px 48px rgba(0,0,0,0.38);
+}
+
+.confirm-title {
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.confirm-copy {
+  color: var(--text);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.confirm-warning {
+  margin-top: 10px;
+  color: #ffb0b0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 .small {
   font-size: 12px;
   color: var(--muted);

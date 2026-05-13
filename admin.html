@@ -120,6 +120,18 @@
     <div class="caption" id="lightboxCaption"></div>
   </div>
 
+  <div class="confirm-modal" id="categoryDeleteModal" aria-hidden="true">
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="categoryDeleteTitle">
+      <div class="confirm-title" id="categoryDeleteTitle">Delete category?</div>
+      <div class="confirm-copy" id="categoryDeleteMessage"></div>
+      <div class="confirm-warning">This also deletes every child category and media item under it.</div>
+      <div class="confirm-actions">
+        <button id="cancelCategoryDeleteBtn" class="ghost" type="button">Cancel</button>
+        <button id="confirmCategoryDeleteBtn" class="danger" type="button">Delete category</button>
+      </div>
+    </div>
+  </div>
+
   <div class="fab" id="pageFab">
     <div class="fab-menu" id="pageFabMenu">
       <a href="/index.html" id="fabUserLink">User Page</a>

@@ -3,6 +3,7 @@ import {
   saveData,
   syncFromRemote,
   findNode,
+  countDescendants,
   removeNodeById,
   uploadMediaFile,
   removeStorageObject
@@ -268,6 +269,10 @@ const elAddChildInput = document.getElementById("addChildInput");
 const elGallery = document.getElementById("gallery");
 const elImgInput = document.getElementById("imgInput");
 const elClearImagesBtn = document.getElementById("clearImagesBtn");
+const categoryDeleteModal = document.getElementById("categoryDeleteModal");
+const categoryDeleteMessage = document.getElementById("categoryDeleteMessage");
+const cancelCategoryDeleteBtn = document.getElementById("cancelCategoryDeleteBtn");
+const confirmCategoryDeleteBtn = document.getElementById("confirmCategoryDeleteBtn");
 
 const pageFab = document.getElementById("pageFab");
 const pageFabBtn = document.getElementById("pageFabBtn");
@@ -318,6 +323,63 @@ function collectStoragePaths(node, paths = []) {
     collectStoragePaths(child, paths);
   }
   return paths;
+}
+
+function countMediaItems(node) {
+  let count = (node?.images || []).length;
+  for (const child of node?.children || []) {
+    count += countMediaItems(child);
+  }
+  return count;
+}
+
+function confirmCategoryDelete(node) {
+  const childCount = countDescendants(node);
+  const mediaCount = countMediaItems(node);
+  const childLabel = childCount === 1 ? "1 child category" : `${childCount} child categories`;
+  const mediaLabel = mediaCount === 1 ? "1 media item" : `${mediaCount} media items`;
+
+  if (!categoryDeleteModal || !categoryDeleteMessage || !cancelCategoryDeleteBtn || !confirmCategoryDeleteBtn) {
+    return Promise.resolve(window.confirm(`Delete "${node.name}" and everything under it?`));
+  }
+
+  categoryDeleteMessage.textContent = `Delete "${node.name}"? This will remove ${childLabel} and ${mediaLabel}.`;
+  categoryDeleteModal.classList.add("open");
+  categoryDeleteModal.setAttribute("aria-hidden", "false");
+  cancelCategoryDeleteBtn.focus();
+
+  return new Promise((resolve) => {
+    function close(confirmed) {
+      categoryDeleteModal.classList.remove("open");
+      categoryDeleteModal.setAttribute("aria-hidden", "true");
+      cancelCategoryDeleteBtn.removeEventListener("click", onCancel);
+      confirmCategoryDeleteBtn.removeEventListener("click", onConfirm);
+      categoryDeleteModal.removeEventListener("click", onBackdrop);
+      document.removeEventListener("keydown", onKeydown);
+      resolve(confirmed);
+    }
+
+    function onCancel() {
+      close(false);
+    }
+
+    function onConfirm() {
+      close(true);
+    }
+
+    function onBackdrop(event) {
+      if (event.target === categoryDeleteModal) close(false);
+    }
+
+    function onKeydown(event) {
+      if (event.key === "Escape") close(false);
+    }
+
+    cancelCategoryDeleteBtn.addEventListener("click", onCancel);
+    confirmCategoryDeleteBtn.addEventListener("click", onConfirm);
+    categoryDeleteModal.addEventListener("click", onBackdrop);
+    document.addEventListener("keydown", onKeydown);
+  });
 }
 
 function pathText(path) {
@@ -763,6 +825,8 @@ document.getElementById("deleteBtn")?.addEventListener("click", async () => {
   if (!found) return;
 
   try {
+    if (!await confirmCategoryDelete(found.node)) return;
+
     for (const path of collectStoragePaths(found.node)) {
       await removeStorageObject(path);
     }
