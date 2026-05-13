@@ -686,6 +686,5 @@ onAuthStateChange(() => {
 });
 
 syncFromRemote(applyRemote);
-setInterval(() => syncFromRemote(applyRemote), 15000);
 
 void refreshAuthState();

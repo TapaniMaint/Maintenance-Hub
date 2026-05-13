@@ -322,6 +322,5 @@ function renderAll() {
 }
 
 syncFromRemote(applyRemote);
-setInterval(() => syncFromRemote(applyRemote), 15000);
 
 renderAll();
