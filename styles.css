@@ -187,6 +187,10 @@ button {
   max-width: 100%;
 }
 button:hover { border-color: var(--accent); }
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 button.ghost { background: transparent; }
 button.danger:hover { border-color: #ff5a5a; }
 
@@ -346,12 +350,7 @@ button.danger:hover { border-color: #ff5a5a; }
   /* align-items: flex-end; */
 }
 
-.content .panel > .row > input[type="text"],
-.content .panel > .row > input[type="file"] {
-  /* flex: 1 1 220px; */
-  /* background: red; */
-  /* height: 100px; */
-}
+
 
 #addMasterInput,
 #addChildInput,
@@ -409,6 +408,19 @@ button.danger:hover { border-color: #ff5a5a; }
   justify-content: space-between;
   gap: 8px;
   min-width: 0;
+}
+
+.card .media-select {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.card .media-select input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
 }
 
 .card .media-label {
@@ -663,9 +675,6 @@ button.danger:hover { border-color: #ff5a5a; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .card { 
-    /* width: 100%;  */
-  }
   .card img,
   .card video { height: 110px; }
 }
@@ -691,10 +700,6 @@ button.danger:hover { border-color: #ff5a5a; }
   .gallery {
     grid-template-columns: 1fr;
   }
-
-  .card { 
-    /* width: 100%; */
-   }
 
   .sidebar {
     top: 59px;

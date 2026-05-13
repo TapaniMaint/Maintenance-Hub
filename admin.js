@@ -27,6 +27,7 @@ let data = loadData();
 let selectedId = data.root.children[0]?.id || "root";
 let expanded = loadExpanded();
 let adminEnabled = false;
+let selectedMediaKeys = new Set();
 
 const authForm = document.getElementById("authForm");
 const adminWorkspace = document.getElementById("adminWorkspace");
@@ -256,6 +257,7 @@ const elRenameInput = document.getElementById("renameInput");
 const elAddChildInput = document.getElementById("addChildInput");
 const elGallery = document.getElementById("gallery");
 const elImgInput = document.getElementById("imgInput");
+const elClearImagesBtn = document.getElementById("clearImagesBtn");
 
 const pageFab = document.getElementById("pageFab");
 const pageFabBtn = document.getElementById("pageFabBtn");
@@ -312,6 +314,17 @@ function pathText(path) {
   return path.map((node) => node.name).join(" -> ");
 }
 
+function mediaSelectionKey(img, index) {
+  return img.id || `${index}:${img.storagePath || img.url || img.dataUrl || img.name || ""}`;
+}
+
+function syncClearMediaButton() {
+  if (!elClearImagesBtn) return;
+  const count = selectedMediaKeys.size;
+  elClearImagesBtn.disabled = count === 0;
+  elClearImagesBtn.textContent = count === 0 ? "Delete selected media" : `Delete selected media (${count})`;
+}
+
 function renderTree() {
   if (!adminEnabled) return;
 
@@ -346,6 +359,7 @@ function renderNodeRow(node, depth) {
   row.appendChild(document.createElement("div"));
 
   row.addEventListener("click", () => {
+    if (selectedId !== node.id) selectedMediaKeys.clear();
     selectedId = node.id;
 
     if ((node.children || []).length > 0) {
@@ -421,6 +435,8 @@ function renderSelectedPanel() {
 
   const imgs = node.images || [];
   if (imgs.length === 0) {
+    selectedMediaKeys.clear();
+    syncClearMediaButton();
     const empty = document.createElement("div");
     empty.className = "small";
     empty.textContent = "No media on this node.";
@@ -432,6 +448,7 @@ function renderSelectedPanel() {
     const src = safeMediaUrl(img.url || img.dataUrl || "");
     if (!src) return;
     const mediaType = mediaTypeFor(img, src);
+    const key = mediaSelectionKey(img, index);
 
     const card = document.createElement("div");
     card.className = "card";
@@ -464,6 +481,20 @@ function renderSelectedPanel() {
     const cap = document.createElement("div");
     cap.className = "cap";
 
+    const selectLabel = document.createElement("label");
+    selectLabel.className = "media-select";
+    const selectInput = document.createElement("input");
+    selectInput.type = "checkbox";
+    selectInput.setAttribute("aria-label", `Select ${img.name || mediaType} for deletion`);
+    selectInput.checked = selectedMediaKeys.has(key);
+    selectInput.addEventListener("click", (event) => event.stopPropagation());
+    selectInput.addEventListener("change", () => {
+      if (selectInput.checked) selectedMediaKeys.add(key);
+      else selectedMediaKeys.delete(key);
+      syncClearMediaButton();
+    });
+    selectLabel.appendChild(selectInput);
+
     const label = document.createElement("span");
     label.className = "media-label";
     label.textContent = img.name || mediaType;
@@ -473,17 +504,25 @@ function renderSelectedPanel() {
     removeButton.className = "danger media-remove";
     removeButton.addEventListener("click", async (event) => {
       event.stopPropagation();
+      const name = img.name || "this media item";
+      if (!window.confirm(`Delete "${name}" from this node?`)) return;
       await removeStorageObject(img.storagePath);
+      selectedMediaKeys.delete(key);
       node.images.splice(index, 1);
       await persistData();
     });
 
+    cap.appendChild(selectLabel);
     cap.appendChild(label);
     cap.appendChild(removeButton);
     card.appendChild(media);
     card.appendChild(cap);
     elGallery.appendChild(card);
   });
+
+  const currentKeys = new Set(imgs.map((img, index) => mediaSelectionKey(img, index)));
+  selectedMediaKeys = new Set([...selectedMediaKeys].filter((key) => currentKeys.has(key)));
+  syncClearMediaButton();
 }
 
 function validateUploadFiles(files) {
@@ -696,19 +735,35 @@ document.getElementById("addImagesBtn")?.addEventListener("click", async () => {
   }
 });
 
-document.getElementById("clearImagesBtn")?.addEventListener("click", async () => {
+elClearImagesBtn?.addEventListener("click", async () => {
   const found = findNode(data.root, selectedId);
   if (!found) return;
 
   try {
-    for (const img of found.node.images || []) {
+    const images = found.node.images || [];
+    const selected = images
+      .map((img, index) => ({ img, key: mediaSelectionKey(img, index) }))
+      .filter((item) => selectedMediaKeys.has(item.key));
+
+    if (selected.length === 0) {
+      setStatus("Select media to delete first.", "error");
+      syncClearMediaButton();
+      return;
+    }
+
+    const label = selected.length === 1 ? "1 selected media item" : `${selected.length} selected media items`;
+    if (!window.confirm(`Delete ${label} from this node?`)) return;
+
+    for (const { img } of selected) {
       await removeStorageObject(img.storagePath);
     }
 
-    found.node.images = [];
+    const selectedKeys = new Set(selected.map((item) => item.key));
+    found.node.images = images.filter((img, index) => !selectedKeys.has(mediaSelectionKey(img, index)));
+    selectedMediaKeys.clear();
     await persistData();
   } catch (error) {
-    setStatus(error.message || "Unable to clear media.", "error");
+    setStatus(error.message || "Unable to delete selected media.", "error");
   }
 });
 
