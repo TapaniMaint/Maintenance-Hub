@@ -47,22 +47,37 @@ function applyRemote(next) {
 const treeToggleBtn = document.getElementById("treeToggleBtn");
 const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
+const sidebar = document.getElementById("sidebar");
+
+function isSidebarDrawer() {
+  return window.innerWidth <= 980;
+}
+
+function syncSidebarState() {
+  const isOpen = document.body.classList.contains("sidebar-open");
+  treeToggleBtn?.setAttribute("aria-expanded", String(isOpen));
+  sidebar?.setAttribute("aria-hidden", String(!isOpen && isSidebarDrawer()));
+}
 
 function closeSidebar() {
   document.body.classList.remove("sidebar-open");
+  syncSidebarState();
 }
 
 function toggleSidebar() {
   if (!adminEnabled) return;
   document.body.classList.toggle("sidebar-open");
+  syncSidebarState();
 }
 
 treeToggleBtn?.addEventListener("click", toggleSidebar);
 overlay?.addEventListener("click", closeSidebar);
 sidebarCloseBtn?.addEventListener("click", closeSidebar);
 window.addEventListener("resize", () => {
-  if (window.innerWidth > 720) closeSidebar();
+  if (!isSidebarDrawer()) closeSidebar();
+  else syncSidebarState();
 });
+syncSidebarState();
 
 const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
@@ -212,6 +227,8 @@ function setStatus(message, type = "info") {
 function setAdminEnabledState(enabled) {
   adminEnabled = enabled;
   adminWorkspace?.classList.toggle("hidden", !enabled);
+  if (!enabled) closeSidebar();
+  syncSidebarState();
 }
 
 function loadExpanded() {
@@ -338,6 +355,7 @@ function renderNodeRow(node, depth) {
     }
 
     renderTree();
+    if (isSidebarDrawer()) closeSidebar();
   });
 
   row.addEventListener("dragstart", (event) => {

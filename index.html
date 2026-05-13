@@ -15,14 +15,14 @@
       <b>Equipment Services</b>
     </div>
     <div class="row" style="gap:10px; justify-content:flex-end;">
-      <button class="iconbtn" id="treeToggleBtn" type="button">Menu</button>
+      <button class="iconbtn" id="treeToggleBtn" type="button" aria-controls="sidebar" aria-expanded="false">Menu</button>
     </div>
   </header>
 
   <div class="overlay" id="overlay"></div>
 
   <div class="main">
-    <section class="panel sidebar">
+    <section class="panel sidebar" id="sidebar" aria-label="Category browser">
       <div class="row" style="justify-content: space-between;">
         <div>
           <div style="font-weight: 700;">Browse</div>

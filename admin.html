@@ -15,7 +15,7 @@
       <b>Equipment Services</b>
     </div>
     <div class="row" style="gap:10px; justify-content:flex-end;">
-      <button class="iconbtn" id="treeToggleBtn" type="button">Menu</button>
+      <button class="iconbtn" id="treeToggleBtn" type="button" aria-controls="sidebar" aria-expanded="false">Menu</button>
     </div>
   </header>
 
@@ -42,7 +42,7 @@
     </section>
 
     <section class="workspace-shell hidden" id="adminWorkspace">
-      <section class="panel sidebar">
+      <section class="panel sidebar" id="sidebar" aria-label="Category editor">
         <div class="row" style="justify-content: space-between;">
           <div>
             <div style="font-weight: 700;">Categories</div>

@@ -467,6 +467,8 @@ button.danger:hover { border-color: #ff5a5a; }
     flex: 1 1 240px;
   }
 
+  .iconbtn { display: inline-flex; align-items: center; gap: 8px; }
+
   .main {
     padding: 10px;
     gap: 10px;
@@ -483,11 +485,30 @@ button.danger:hover { border-color: #ff5a5a; }
   }
 
   .sidebar {
+    position: fixed;
+    top: 65px;
+    left: 0;
+    bottom: 0;
     flex: 0 0 auto;
-    width: 100%;
+    width: min(92vw, 420px);
+    max-width: 420px;
     min-width: 0;
-    max-height: min(45vh, calc(100vh - 78px));
+    z-index: 60;
+    transform: translateX(-105%);
+    transition: transform 160ms ease;
+    border-radius: 0;
+    max-height: none;
+    visibility: hidden;
+    pointer-events: none;
   }
+
+  body.sidebar-open .sidebar {
+    transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  body.sidebar-open .overlay { display: block; }
 
   .card { width: 160px; }
   .workspace-shell {
@@ -527,8 +548,6 @@ button.danger:hover { border-color: #ff5a5a; }
   header a {
     padding: 8px 10px;
   }
-
-  .iconbtn { display: inline-flex; align-items: center; gap: 8px; }
 
   .main {
     display: block;
@@ -608,22 +627,8 @@ button.danger:hover { border-color: #ff5a5a; }
   }
 
   .sidebar {
-    position: fixed;
     top: 65px;
-    left: 0;
-    bottom: 0;
-    width: min(92vw, 420px);
-    max-width: 420px;
-    min-width: 0;
-    z-index: 60;
-    transform: translateX(-105%);
-    transition: transform 160ms ease;
-    border-radius: 0;
-    max-height: none;
   }
-
-  body.sidebar-open .sidebar { transform: translateX(0); }
-  body.sidebar-open .overlay { display: block; }
 
   .content { width: 100%; }
   .tree { max-height: calc(100vh - 260px); }
@@ -658,7 +663,9 @@ button.danger:hover { border-color: #ff5a5a; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .card { width: 100%; }
+  .card { 
+    /* width: 100%;  */
+  }
   .card img,
   .card video { height: 110px; }
 }
@@ -685,7 +692,9 @@ button.danger:hover { border-color: #ff5a5a; }
     grid-template-columns: 1fr;
   }
 
-  .card { width: 100%; }
+  .card { 
+    /* width: 100%; */
+   }
 
   .sidebar {
     top: 59px;
