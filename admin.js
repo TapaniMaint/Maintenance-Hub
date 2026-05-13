@@ -6,7 +6,7 @@ import {
 
 const EXPANDED_KEY_ADMIN = "maintenanceHubExpanded_admin_v1";
 const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
-const MAX_VIDEO_UPLOAD_BYTES = 100 * 1024 * 1024;
+const MAX_VIDEO_UPLOAD_BYTES = 50 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm", "video/ogg"]);
 const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
@@ -117,15 +117,16 @@ function validateUploadFiles(files) {
     const extension = dotIndex >= 0 ? file.name.slice(dotIndex).toLowerCase() : "";
     const isImageExt = ALLOWED_IMAGE_EXTENSIONS.includes(extension);
     const isVideoExt = ALLOWED_VIDEO_EXTENSIONS.includes(extension);
-    const isImage = isImageExt && (!file.type || ALLOWED_IMAGE_TYPES.has(file.type));
-    const isVideo = isVideoExt && (!file.type || ALLOWED_VIDEO_TYPES.has(file.type));
+    const hasUnknownType = !file.type || file.type === "application/octet-stream";
+    const isImage = isImageExt && (hasUnknownType || ALLOWED_IMAGE_TYPES.has(file.type));
+    const isVideo = isVideoExt && (hasUnknownType || ALLOWED_VIDEO_TYPES.has(file.type));
 
     if (!isImage && !isVideo) {
       throw new Error(`Blocked upload: ${file.name} is not a supported image or video file.`);
     }
 
     const maxSize = isVideo ? MAX_VIDEO_UPLOAD_BYTES : MAX_IMAGE_UPLOAD_BYTES;
-    const maxSizeLabel = isVideo ? "100 MB" : "5 MB";
+    const maxSizeLabel = isVideo ? "50 MB" : "5 MB";
     if (file.size > maxSize) {
       throw new Error(`Blocked upload: ${file.name} exceeds the ${maxSizeLabel} limit.`);
     }
