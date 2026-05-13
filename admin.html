@@ -88,21 +88,21 @@
         </div>
 
         <div class="panel" style="background: var(--panel2);">
-          <div style="font-weight: 700; margin-bottom: 8px;">Images on This Node</div>
+          <div style="font-weight: 700; margin-bottom: 8px;">Media on This Node</div>
           <div class="row">
-            <input id="imgInput" type="file" accept=".jpg,.jpeg,.png,.gif,.webp" multiple />
-            <button id="addImagesBtn" type="button">Add images</button>
-            <button id="clearImagesBtn" class="danger" type="button">Clear images</button>
+            <input id="imgInput" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.ogv" multiple />
+            <button id="addImagesBtn" type="button">Add media</button>
+            <button id="clearImagesBtn" class="danger" type="button">Clear media</button>
           </div>
-          <div class="small">Uploads are limited to JPG, PNG, GIF, or WebP files up to 5 MB each.</div>
+          <div class="small">Uploads allow JPG, PNG, GIF, WebP up to 5 MB, or MP4, MOV, WebM, OGV up to 50 MB.</div>
           <div style="height: 10px;"></div>
           <div class="gallery" id="gallery"></div>
         </div>
 
         <div class="panel" style="background: var(--panel2); margin-bottom: 10px;">
-          <div style="font-weight: 700; margin-bottom: 8px;">Add Image by Link</div>
+          <div style="font-weight: 700; margin-bottom: 8px;">Add Media by Link</div>
           <div class="row">
-            <input id="imgUrlInput" type="text" placeholder="Paste an HTTPS image link" />
+            <input id="imgUrlInput" type="text" placeholder="Paste an HTTPS image or video link" />
             <input id="imgUrlName" type="text" placeholder="Optional name (e.g., Engine Bay)" style="max-width: 280px;" />
             <button id="addImgUrlBtn" type="button">Add link</button>
           </div>
@@ -113,7 +113,10 @@
   </div>
 
   <div class="lightbox" id="lightbox">
-    <img id="lightboxImg" alt="" />
+    <div class="frame">
+      <img id="lightboxImg" alt="" />
+      <video id="lightboxVideo" controls playsinline></video>
+    </div>
     <div class="caption" id="lightboxCaption"></div>
   </div>
 

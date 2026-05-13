@@ -110,9 +110,31 @@ function publicStorageUrl(path) {
   return `${SUPABASE_CONFIG.url}/storage/v1/object/public/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
 }
 
+function uploadContentType(file) {
+  if (file.type && file.type !== "application/octet-stream") return file.type;
+
+  const extension = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+  const mimeByExtension = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".mp4": "video/mp4",
+    ".mov": "video/quicktime",
+    ".webm": "video/webm",
+    ".ogv": "video/ogg"
+  };
+
+  return mimeByExtension[extension] || "application/octet-stream";
+}
+
 async function requestJson(url, options = {}) {
   const res = await fetch(url, options);
-  if (!res.ok) throw new Error(`Supabase request failed: ${res.status}`);
+  if (!res.ok) {
+    const details = await res.text().catch(() => "");
+    throw new Error(`Supabase request failed: ${res.status}${details ? ` - ${details}` : ""}`);
+  }
   if (res.status === 204) return null;
   const text = await res.text();
   return text ? JSON.parse(text) : null;
@@ -137,7 +159,7 @@ function flattenTree(root) {
       media.push({
         id: img.id || uid(),
         category_id: node.id,
-        name: img.name || "image",
+        name: img.name || "media",
         url: img.storagePath ? null : (img.url || img.dataUrl || null),
         storage_path: img.storagePath || null,
         sort_order: index,
@@ -309,7 +331,7 @@ export async function uploadMediaFile(file, categoryId) {
     };
   }
 
-  const safeName = file.name.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "image";
+  const safeName = file.name.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "media";
   const path = `${categoryId}/${id}-${safeName}`;
   const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
 
@@ -317,7 +339,7 @@ export async function uploadMediaFile(file, categoryId) {
     method: "POST",
     headers: await apiHeaders({
       admin: true,
-      "Content-Type": file.type || "application/octet-stream",
+      "Content-Type": uploadContentType(file),
       "x-upsert": "false"
     }),
     body: file

@@ -16,9 +16,12 @@ import {
 } from "./supabase-client.js";
 
 const EXPANDED_KEY_ADMIN = "maintenanceHubExpanded_admin_v1";
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
+const MAX_VIDEO_UPLOAD_BYTES = 50 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
-const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm", "video/ogg"]);
+const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
+const ALLOWED_VIDEO_EXTENSIONS = [".mp4", ".mov", ".webm", ".ogv"];
 
 let data = loadData();
 let selectedId = data.root.children[0]?.id || "root";
@@ -63,10 +66,23 @@ window.addEventListener("resize", () => {
 
 const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
+const lightboxVideo = document.getElementById("lightboxVideo");
 const lightboxCaption = document.getElementById("lightboxCaption");
 
-function openLightbox(src, caption = "") {
-  lightboxImg.src = src;
+function openLightbox(src, caption = "", mediaType = "image") {
+  if (mediaType === "video") {
+    lightboxImg.hidden = true;
+    lightboxImg.src = "";
+    lightboxVideo.hidden = false;
+    lightboxVideo.src = src;
+  } else {
+    lightboxVideo.hidden = true;
+    lightboxVideo.pause();
+    lightboxVideo.removeAttribute("src");
+    lightboxVideo.load();
+    lightboxImg.hidden = false;
+    lightboxImg.src = src;
+  }
   lightboxCaption.textContent = caption;
   lightbox.classList.add("open");
   document.body.style.overflow = "hidden";
@@ -75,8 +91,13 @@ function openLightbox(src, caption = "") {
 lightbox?.addEventListener("click", () => {
   lightbox.classList.remove("open");
   lightboxImg.src = "";
+  lightboxVideo.pause();
+  lightboxVideo.removeAttribute("src");
+  lightboxVideo.load();
   document.body.style.overflow = "";
 });
+lightboxImg?.addEventListener("click", (event) => event.stopPropagation());
+lightboxVideo?.addEventListener("click", (event) => event.stopPropagation());
 
 function normalizeOneDriveUrl(url) {
   const trimmed = url.trim();
@@ -84,7 +105,7 @@ function normalizeOneDriveUrl(url) {
 
   const parsed = new URL(trimmed, window.location.href);
   if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-    throw new Error("Only HTTP and HTTPS image links are allowed.");
+    throw new Error("Only HTTP and HTTPS media links are allowed.");
   }
 
   if (/onedrive|sharepoint/i.test(parsed.hostname) && !parsed.searchParams.has("download")) {
@@ -94,12 +115,12 @@ function normalizeOneDriveUrl(url) {
   return parsed.href;
 }
 
-function safeImageUrl(value) {
+function safeMediaUrl(value) {
   if (typeof value !== "string") return "";
 
   const trimmed = value.trim();
   if (!trimmed) return "";
-  if (trimmed.startsWith("data:image/")) return trimmed;
+  if (trimmed.startsWith("data:image/") || trimmed.startsWith("data:video/")) return trimmed;
   if (trimmed.startsWith("blob:")) return trimmed;
 
   try {
@@ -112,6 +133,12 @@ function safeImageUrl(value) {
   }
 
   return "";
+}
+
+function mediaTypeFor(item, src = "") {
+  const value = `${item?.name || ""} ${src || item?.url || item?.dataUrl || ""}`.toLowerCase();
+  if (value.startsWith("data:video/") || /\.(mp4|mov|webm|ogv)(?:[?#]|$)/i.test(value)) return "video";
+  return "image";
 }
 
 function setStatus(message, type = "info") {
@@ -232,7 +259,7 @@ function renderNodeRow(node, depth) {
 
   const meta = document.createElement("div");
   meta.className = "meta";
-  meta.textContent = `(${(node.children || []).length} child, ${(node.images || []).length} img)`;
+  meta.textContent = `(${(node.children || []).length} child, ${(node.images || []).length} media)`;
 
   left.appendChild(name);
   left.appendChild(meta);
@@ -316,29 +343,36 @@ function renderSelectedPanel() {
   if (imgs.length === 0) {
     const empty = document.createElement("div");
     empty.className = "small";
-    empty.textContent = "No images on this node.";
+    empty.textContent = "No media on this node.";
     elGallery.appendChild(empty);
     return;
   }
 
   imgs.forEach((img, index) => {
-    const src = safeImageUrl(img.url || img.dataUrl || "");
+    const src = safeMediaUrl(img.url || img.dataUrl || "");
     if (!src) return;
+    const mediaType = mediaTypeFor(img, src);
 
     const card = document.createElement("div");
     card.className = "card";
 
-    const image = document.createElement("img");
-    image.src = src;
-    image.alt = img.name || "image";
-    image.style.cursor = "zoom-in";
-    image.addEventListener("click", () => openLightbox(src, img.name || ""));
+    const media = mediaType === "video" ? document.createElement("video") : document.createElement("img");
+    media.src = src;
+    media.style.cursor = "zoom-in";
+    if (mediaType === "video") {
+      media.controls = true;
+      media.playsInline = true;
+      media.preload = "metadata";
+    } else {
+      media.alt = img.name || "image";
+    }
+    media.addEventListener("click", () => openLightbox(src, img.name || "", mediaType));
 
     const cap = document.createElement("div");
     cap.className = "cap";
 
     const label = document.createElement("span");
-    label.textContent = img.name || "image";
+    label.textContent = img.name || mediaType;
 
     const removeButton = document.createElement("button");
     removeButton.textContent = "Remove";
@@ -353,7 +387,7 @@ function renderSelectedPanel() {
 
     cap.appendChild(label);
     cap.appendChild(removeButton);
-    card.appendChild(image);
+    card.appendChild(media);
     card.appendChild(cap);
     elGallery.appendChild(card);
   });
@@ -361,17 +395,25 @@ function renderSelectedPanel() {
 
 function validateUploadFiles(files) {
   if (!files.length) {
-    throw new Error("Choose at least one image to upload.");
+    throw new Error("Choose at least one media file to upload.");
   }
 
   for (const file of files) {
-    const extension = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
-    if (!ALLOWED_IMAGE_TYPES.has(file.type) || !ALLOWED_EXTENSIONS.includes(extension)) {
-      throw new Error(`Blocked upload: ${file.name} is not a supported JPG, PNG, GIF, or WebP image.`);
+    const dotIndex = file.name.lastIndexOf(".");
+    const extension = dotIndex >= 0 ? file.name.slice(dotIndex).toLowerCase() : "";
+    const isImageExt = ALLOWED_IMAGE_EXTENSIONS.includes(extension);
+    const isVideoExt = ALLOWED_VIDEO_EXTENSIONS.includes(extension);
+    const hasUnknownType = !file.type || file.type === "application/octet-stream";
+    const isImage = isImageExt && (hasUnknownType || ALLOWED_IMAGE_TYPES.has(file.type));
+    const isVideo = isVideoExt && (hasUnknownType || ALLOWED_VIDEO_TYPES.has(file.type));
+    if (!isImage && !isVideo) {
+      throw new Error(`Blocked upload: ${file.name} is not a supported image or video file.`);
     }
 
-    if (file.size > MAX_UPLOAD_BYTES) {
-      throw new Error(`Blocked upload: ${file.name} exceeds the 5 MB limit.`);
+    const maxSize = isVideo ? MAX_VIDEO_UPLOAD_BYTES : MAX_IMAGE_UPLOAD_BYTES;
+    const maxSizeLabel = isVideo ? "50 MB" : "5 MB";
+    if (file.size > maxSize) {
+      throw new Error(`Blocked upload: ${file.name} exceeds the ${maxSizeLabel} limit.`);
     }
   }
 }
@@ -447,10 +489,10 @@ document.getElementById("addImgUrlBtn")?.addEventListener("click", async () => {
 
   try {
     const rawUrl = (elImgUrlInput?.value || "").trim();
-    if (!rawUrl) throw new Error("Paste an image URL first.");
+    if (!rawUrl) throw new Error("Paste a media URL first.");
 
     const url = normalizeOneDriveUrl(rawUrl);
-    const name = (elImgUrlName?.value || "").trim() || "Linked image";
+    const name = (elImgUrlName?.value || "").trim() || "Linked media";
 
     found.node.images = found.node.images || [];
     found.node.images.push({
@@ -464,7 +506,7 @@ document.getElementById("addImgUrlBtn")?.addEventListener("click", async () => {
 
     await persistData();
   } catch (error) {
-    setStatus(error.message || "Unable to add the image link.", "error");
+    setStatus(error.message || "Unable to add the media link.", "error");
   }
 });
 
@@ -573,7 +615,7 @@ document.getElementById("clearImagesBtn")?.addEventListener("click", async () =>
     found.node.images = [];
     await persistData();
   } catch (error) {
-    setStatus(error.message || "Unable to clear images.", "error");
+    setStatus(error.message || "Unable to clear media.", "error");
   }
 });
 

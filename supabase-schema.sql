@@ -94,8 +94,17 @@ values (
   'maintenance-media',
   'maintenance-media',
   true,
-  5242880,
-  array['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+  52428800,
+  array[
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'video/mp4',
+    'video/quicktime',
+    'video/webm',
+    'video/ogg'
+  ]
 )
 on conflict (id) do update
 set
