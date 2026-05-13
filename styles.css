@@ -300,6 +300,40 @@ button.danger:hover { border-color: #ff5a5a; }
   min-width: 0;
 }
 
+.tree-toggle-indicator {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  position: relative;
+}
+
+.tree-toggle-indicator::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 2px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+
+.tree-toggle-indicator.expanded::before {
+  transform: rotate(45deg);
+  border-color: var(--accent);
+}
+
+.tree-toggle-indicator.leaf::before {
+  display: none;
+}
+
+.tree-item:hover .tree-toggle-indicator::before,
+.tree-item.selected .tree-toggle-indicator::before {
+  border-color: var(--accent);
+}
+
 .tree-item .name {
   white-space: nowrap;
   overflow: hidden;
@@ -774,7 +808,7 @@ button.danger:hover { border-color: #ff5a5a; }
   }
 
   .gallery {
-    display: grid;
+    /* display: grid; */
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

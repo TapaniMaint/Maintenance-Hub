@@ -422,6 +422,8 @@ function renderTree() {
 
 function renderNodeRow(node, depth) {
   const row = document.createElement("div");
+  const hasChildren = (node.children || []).length > 0;
+  const isExpanded = expanded.has(node.id);
   row.className = "tree-item" + (node.id === selectedId ? " selected" : "");
   row.style.marginLeft = `${depth * 12}px`;
   row.draggable = true;
@@ -431,6 +433,12 @@ function renderNodeRow(node, depth) {
   const left = document.createElement("div");
   left.className = "left";
 
+  const toggleIndicator = document.createElement("span");
+  toggleIndicator.className = "tree-toggle-indicator";
+  toggleIndicator.setAttribute("aria-hidden", "true");
+  if (hasChildren && isExpanded) toggleIndicator.classList.add("expanded");
+  if (!hasChildren) toggleIndicator.classList.add("leaf");
+
   const name = document.createElement("div");
   name.className = "name";
   name.textContent = node.name;
@@ -439,6 +447,7 @@ function renderNodeRow(node, depth) {
   meta.className = "meta";
   meta.textContent = `(${(node.children || []).length} child, ${(node.images || []).length} media)`;
 
+  left.appendChild(toggleIndicator);
   left.appendChild(name);
   left.appendChild(meta);
   row.appendChild(left);
@@ -448,7 +457,7 @@ function renderNodeRow(node, depth) {
     if (selectedId !== node.id) selectedMediaKeys.clear();
     selectedId = node.id;
 
-    if ((node.children || []).length > 0) {
+    if (hasChildren) {
       if (expanded.has(node.id)) expanded.delete(node.id);
       else expanded.add(node.id);
       saveExpanded();
@@ -505,7 +514,7 @@ function renderNodeRow(node, depth) {
 
   elTree.appendChild(row);
 
-  if ((node.children || []).length > 0 && expanded.has(node.id)) {
+  if (hasChildren && expanded.has(node.id)) {
     for (const child of node.children || []) renderNodeRow(child, depth + 1);
   }
 }
