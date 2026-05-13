@@ -612,6 +612,11 @@ header a {
   border-radius: 12px;
 }
 
+.lightbox img[hidden],
+.lightbox video[hidden] {
+  display: none;
+}
+
 
 .lightbox .caption {
   position: fixed;
