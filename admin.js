@@ -137,7 +137,7 @@ lightboxImg?.addEventListener("wheel", (event) => {
     imagePanY = 0;
   }
   applyImageZoom();
-});
+}, { passive: false });
 lightboxImg?.addEventListener("pointerdown", (event) => {
   if (!customImageZoom) return;
   if (imageZoom <= 1) return;
