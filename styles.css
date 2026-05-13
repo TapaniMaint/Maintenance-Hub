@@ -612,6 +612,18 @@ header a {
   border-radius: 12px;
 }
 
+.lightbox img {
+  cursor: zoom-in;
+  touch-action: none;
+  transform-origin: center center;
+}
+
+.lightbox img.zoomed {
+  cursor: grab;
+  max-width: none;
+  max-height: none;
+}
+
 .lightbox img[hidden],
 .lightbox video[hidden] {
   display: none;

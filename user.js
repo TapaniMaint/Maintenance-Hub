@@ -37,8 +37,26 @@ const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
 const lightboxVideo = document.getElementById("lightboxVideo");
 const lightboxCaption = document.getElementById("lightboxCaption");
+let imageZoom = 1;
+let imagePanX = 0;
+let imagePanY = 0;
+let imageDrag = null;
+
+function applyImageZoom() {
+  lightboxImg.style.transform = `translate(${imagePanX}px, ${imagePanY}px) scale(${imageZoom})`;
+  lightboxImg.classList.toggle("zoomed", imageZoom > 1);
+}
+
+function resetImageZoom() {
+  imageZoom = 1;
+  imagePanX = 0;
+  imagePanY = 0;
+  imageDrag = null;
+  applyImageZoom();
+}
 
 function openLightbox(src, caption = "", mediaType = "image") {
+  resetImageZoom();
   if (mediaType === "video") {
     lightboxImg.hidden = true;
     lightboxImg.src = "";
@@ -59,13 +77,52 @@ function openLightbox(src, caption = "", mediaType = "image") {
 
 lightbox?.addEventListener("click", () => {
   lightbox.classList.remove("open");
+  resetImageZoom();
   lightboxImg.src = "";
   lightboxVideo.pause();
   lightboxVideo.removeAttribute("src");
   lightboxVideo.load();
   document.body.style.overflow = "";
 });
-lightboxImg?.addEventListener("click", (event) => event.stopPropagation());
+lightboxImg?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  if (imageZoom === 1) {
+    imageZoom = 2;
+  } else {
+    resetImageZoom();
+    return;
+  }
+  applyImageZoom();
+});
+lightboxImg?.addEventListener("wheel", (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  imageZoom = Math.min(4, Math.max(1, imageZoom + (event.deltaY < 0 ? 0.25 : -0.25)));
+  if (imageZoom === 1) {
+    imagePanX = 0;
+    imagePanY = 0;
+  }
+  applyImageZoom();
+});
+lightboxImg?.addEventListener("pointerdown", (event) => {
+  if (imageZoom <= 1) return;
+  event.preventDefault();
+  event.stopPropagation();
+  lightboxImg.setPointerCapture(event.pointerId);
+  imageDrag = { x: event.clientX, y: event.clientY, panX: imagePanX, panY: imagePanY };
+});
+lightboxImg?.addEventListener("pointermove", (event) => {
+  if (!imageDrag) return;
+  imagePanX = imageDrag.panX + event.clientX - imageDrag.x;
+  imagePanY = imageDrag.panY + event.clientY - imageDrag.y;
+  applyImageZoom();
+});
+lightboxImg?.addEventListener("pointerup", () => {
+  imageDrag = null;
+});
+lightboxImg?.addEventListener("pointercancel", () => {
+  imageDrag = null;
+});
 lightboxVideo?.addEventListener("click", (event) => event.stopPropagation());
 
 const pageFab = document.getElementById("pageFab");
