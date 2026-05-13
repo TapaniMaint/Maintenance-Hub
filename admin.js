@@ -219,6 +219,16 @@ function mediaTypeFor(item, src = "") {
   return "image";
 }
 
+function fileNameFromUrl(url) {
+  try {
+    const parsed = new URL(url, window.location.href);
+    const lastSegment = decodeURIComponent(parsed.pathname.split("/").filter(Boolean).pop() || "");
+    return lastSegment || "";
+  } catch {
+    return "";
+  }
+}
+
 function setStatus(message, type = "info") {
   if (!statusBanner) return;
   statusBanner.textContent = message;
@@ -316,6 +326,14 @@ function pathText(path) {
 
 function mediaSelectionKey(img, index) {
   return img.id || `${index}:${img.storagePath || img.url || img.dataUrl || img.name || ""}`;
+}
+
+function displayMediaName(img, fallback = "media") {
+  return (img?.name || "").trim() || fallback;
+}
+
+function displayFileName(img) {
+  return (img?.fileName || "").trim();
 }
 
 function syncClearMediaButton() {
@@ -448,6 +466,7 @@ function renderSelectedPanel() {
     const src = safeMediaUrl(img.url || img.dataUrl || "");
     if (!src) return;
     const mediaType = mediaTypeFor(img, src);
+    const mediaName = displayMediaName(img, mediaType);
     const key = mediaSelectionKey(img, index);
 
     const card = document.createElement("div");
@@ -466,9 +485,9 @@ function renderSelectedPanel() {
       media.playsInline = true;
       media.preload = "metadata";
     } else {
-      media.alt = img.name || "image";
+      media.alt = mediaName;
     }
-    media.addEventListener("click", () => openLightbox(src, img.name || "", mediaType));
+    media.addEventListener("click", () => openLightbox(src, displayMediaName(img, mediaType), mediaType));
 
     if (mediaType === "video") {
       const badge = document.createElement("div");
@@ -485,7 +504,7 @@ function renderSelectedPanel() {
     selectLabel.className = "media-select";
     const selectInput = document.createElement("input");
     selectInput.type = "checkbox";
-    selectInput.setAttribute("aria-label", `Select ${img.name || mediaType} for deletion`);
+    selectInput.setAttribute("aria-label", `Select ${mediaName} for deletion`);
     selectInput.checked = selectedMediaKeys.has(key);
     selectInput.addEventListener("click", (event) => event.stopPropagation());
     selectInput.addEventListener("change", () => {
@@ -495,16 +514,55 @@ function renderSelectedPanel() {
     });
     selectLabel.appendChild(selectInput);
 
-    const label = document.createElement("span");
-    label.className = "media-label";
-    label.textContent = img.name || mediaType;
+    const nameEditor = document.createElement("div");
+    nameEditor.className = "media-name-editor";
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "media-name-input";
+    nameInput.value = mediaName;
+    nameInput.placeholder = "Media name";
+    nameInput.setAttribute("aria-label", `Media name for ${mediaName}`);
+    nameInput.addEventListener("pointerdown", (event) => event.stopPropagation());
+    nameInput.addEventListener("click", (event) => event.stopPropagation());
+    nameInput.addEventListener("input", () => {
+      const nextName = nameInput.value.trim();
+      saveNameButton.disabled = !nextName || nextName === displayMediaName(img, mediaType);
+    });
+    nameInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !saveNameButton.disabled) {
+        event.preventDefault();
+        saveNameButton.click();
+      }
+    });
+
+    const saveNameButton = document.createElement("button");
+    saveNameButton.type = "button";
+    saveNameButton.className = "media-name-save";
+    saveNameButton.textContent = "Save";
+    saveNameButton.disabled = true;
+    saveNameButton.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const nextName = nameInput.value.trim();
+      if (!nextName || nextName === displayMediaName(img, mediaType)) return;
+      img.name = nextName;
+      await persistData();
+    });
+
+    nameEditor.appendChild(nameInput);
+    nameEditor.appendChild(saveNameButton);
+
+    const fileName = displayFileName(img);
+    const fileMeta = document.createElement("div");
+    fileMeta.className = "media-file-name";
+    fileMeta.textContent = fileName ? `File: ${fileName}` : "File: linked media";
 
     const removeButton = document.createElement("button");
     removeButton.textContent = "Remove";
     removeButton.className = "danger media-remove";
     removeButton.addEventListener("click", async (event) => {
       event.stopPropagation();
-      const name = img.name || "this media item";
+      const name = displayMediaName(img, "this media item");
       if (!window.confirm(`Delete "${name}" from this node?`)) return;
       await removeStorageObject(img.storagePath);
       selectedMediaKeys.delete(key);
@@ -513,7 +571,8 @@ function renderSelectedPanel() {
     });
 
     cap.appendChild(selectLabel);
-    cap.appendChild(label);
+    cap.appendChild(nameEditor);
+    cap.appendChild(fileMeta);
     cap.appendChild(removeButton);
     card.appendChild(media);
     card.appendChild(cap);
@@ -630,6 +689,7 @@ document.getElementById("addImgUrlBtn")?.addEventListener("click", async () => {
     found.node.images.push({
       id: crypto.randomUUID?.() || String(Date.now()),
       name,
+      fileName: fileNameFromUrl(url),
       url
     });
 

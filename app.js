@@ -110,6 +110,22 @@ function publicStorageUrl(path) {
   return `${SUPABASE_CONFIG.url}/storage/v1/object/public/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
 }
 
+let supportsMediaFileName = true;
+
+function missingFileNameColumn(error) {
+  const message = String(error?.message || "");
+  return message.includes("file_name") && (
+    message.includes("PGRST204") ||
+    message.includes("42703") ||
+    message.toLowerCase().includes("column")
+  );
+}
+
+function mediaRowsForRemote(media) {
+  if (supportsMediaFileName) return media;
+  return media.map(({ file_name, ...item }) => item);
+}
+
 function uploadContentType(file) {
   if (file.type && file.type !== "application/octet-stream") return file.type;
 
@@ -160,6 +176,7 @@ function flattenTree(root) {
         id: img.id || uid(),
         category_id: node.id,
         name: img.name || "media",
+        file_name: img.fileName || null,
         url: img.storagePath ? null : (img.url || img.dataUrl || null),
         storage_path: img.storagePath || null,
         sort_order: index,
@@ -187,6 +204,7 @@ function buildTree(categories, media) {
     node.images.push({
       id: item.id,
       name: item.name,
+      fileName: item.file_name || "",
       url: item.url || (item.storage_path ? publicStorageUrl(item.storage_path) : ""),
       storagePath: item.storage_path || ""
     });
@@ -251,7 +269,9 @@ async function fetchRemoteData() {
   if (!remoteEnabled()) return null;
 
   const categoryQuery = "select=id,parent_id,name,sort_order,updated_at&order=sort_order.asc";
-  const mediaQuery = "select=id,category_id,name,url,storage_path,sort_order,updated_at&order=sort_order.asc";
+  const mediaQuery = supportsMediaFileName
+    ? "select=id,category_id,name,file_name,url,storage_path,sort_order,updated_at&order=sort_order.asc"
+    : "select=id,category_id,name,url,storage_path,sort_order,updated_at&order=sort_order.asc";
   const [categories, media] = await Promise.all([
     requestJson(tableUrl(SUPABASE_CONFIG.categoriesTable, categoryQuery), {
       headers: await apiHeaders({ Accept: "application/json" })
@@ -265,10 +285,20 @@ async function fetchRemoteData() {
   return buildTree(categories, media || []);
 }
 
+async function fetchRemoteDataWithFallback() {
+  try {
+    return await fetchRemoteData();
+  } catch (error) {
+    if (!supportsMediaFileName || !missingFileNameColumn(error)) throw error;
+    supportsMediaFileName = false;
+    return fetchRemoteData();
+  }
+}
+
 export async function syncFromRemote(onUpdate) {
   if (!remoteEnabled()) return;
   try {
-    const remoteData = await fetchRemoteData();
+    const remoteData = await fetchRemoteDataWithFallback();
     if (!remoteData) return;
 
     setLocalDataRaw(remoteData);
@@ -295,15 +325,29 @@ export async function pushRemoteData(data) {
   }
 
   if (media.length) {
-    await requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, "on_conflict=id"), {
-      method: "POST",
-      headers: await apiHeaders({
-        admin: true,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates,return=minimal"
-      }),
-      body: JSON.stringify(media)
-    });
+    try {
+      await requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, "on_conflict=id"), {
+        method: "POST",
+        headers: await apiHeaders({
+          admin: true,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        }),
+        body: JSON.stringify(mediaRowsForRemote(media))
+      });
+    } catch (error) {
+      if (!supportsMediaFileName || !missingFileNameColumn(error)) throw error;
+      supportsMediaFileName = false;
+      await requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, "on_conflict=id"), {
+        method: "POST",
+        headers: await apiHeaders({
+          admin: true,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        }),
+        body: JSON.stringify(mediaRowsForRemote(media))
+      });
+    }
   }
 
   await deleteRowsNotIn(SUPABASE_CONFIG.mediaTable, media.map(item => item.id));
@@ -327,6 +371,7 @@ export async function uploadMediaFile(file, categoryId) {
     return {
       id,
       name: file.name,
+      fileName: file.name,
       dataUrl: await fileToDataUrl(file)
     };
   }
@@ -348,6 +393,7 @@ export async function uploadMediaFile(file, categoryId) {
   return {
     id,
     name: file.name,
+    fileName: file.name,
     url: publicStorageUrl(path),
     storagePath: path
   };

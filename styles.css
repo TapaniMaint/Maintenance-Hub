@@ -381,7 +381,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
 .card {
   position: relative;
-  width: 180px;
+  width: 240px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--panel2);
@@ -404,7 +404,8 @@ button.danger:hover { border-color: #ff5a5a; }
   font-size: 12px;
   color: var(--muted);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   justify-content: space-between;
   gap: 8px;
   min-width: 0;
@@ -429,10 +430,44 @@ button.danger:hover { border-color: #ff5a5a; }
   overflow-wrap: anywhere;
 }
 
+.card .media-name-editor {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card .media-name-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  padding: 8px 10px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+.card .media-name-save {
+  flex: 0 0 auto;
+  height: 40px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.card .media-file-name {
+  width: 100%;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .card .media-remove {
   flex: 0 0 auto;
-  padding: 6px 8px;
-  max-width: 76px;
+  padding: 8px 10px;
+  max-width: none;
+  width: 100%;
 }
 
 .video-badge {
@@ -663,6 +698,10 @@ button.danger:hover { border-color: #ff5a5a; }
   .card .cap {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .card .media-name-editor {
+    width: 100%;
   }
 
   .card .media-remove {

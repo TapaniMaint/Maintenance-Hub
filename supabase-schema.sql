@@ -16,6 +16,7 @@ create table if not exists public.media (
   id text primary key,
   category_id text not null references public.categories(id) on delete cascade,
   name text not null,
+  file_name text,
   url text,
   storage_path text,
   sort_order integer not null default 0,
@@ -23,6 +24,13 @@ create table if not exists public.media (
   updated_at timestamptz not null default now(),
   constraint media_has_source check (url is not null or storage_path is not null)
 );
+
+alter table public.media
+  add column if not exists file_name text;
+
+update public.media
+  set file_name = name
+  where file_name is null;
 
 create index if not exists categories_parent_sort_idx
   on public.categories(parent_id, sort_order, name);
