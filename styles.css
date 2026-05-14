@@ -483,6 +483,12 @@ button.danger:hover { border-color: #ff5a5a; }
   background: #070a0f;
 }
 
+@media (min-width: 981px) and (pointer: fine) {
+  .card .media-lightbox-trigger {
+    cursor: zoom-in;
+  }
+}
+
 .card .cap {
   padding: 8px 10px;
   font-size: 12px;
@@ -956,12 +962,15 @@ button.danger:hover { border-color: #ff5a5a; }
 }
 
 .lightbox img {
-  cursor: zoom-in;
-  touch-action: pinch-zoom;
+  touch-action: pan-x pan-y;
   transform-origin: center center;
 }
 
-.lightbox img.zoomed {
+.lightbox.desktop-zoom img {
+  cursor: zoom-in;
+}
+
+.lightbox.desktop-zoom img.zoomed {
   cursor: grab;
   max-width: none;
   max-height: none;

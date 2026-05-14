@@ -51,6 +51,7 @@ collapseTreeBtn?.addEventListener("click", () => {
 window.addEventListener("resize", () => {
   if (!isSidebarDrawer()) closeSidebar();
   else syncSidebarState();
+  syncImageZoomMode();
 });
 syncSidebarState();
 
@@ -62,7 +63,11 @@ let imageZoom = 1;
 let imagePanX = 0;
 let imagePanY = 0;
 let imageDrag = null;
-const customImageZoom = window.matchMedia?.("(pointer: fine)")?.matches ?? true;
+const desktopImageZoomQuery = window.matchMedia?.("(min-width: 981px) and (pointer: fine)");
+
+function canUseCustomImageZoom() {
+  return desktopImageZoomQuery?.matches ?? window.innerWidth > 980;
+}
 
 function applyImageZoom() {
   lightboxImg.style.transform = `translate(${imagePanX}px, ${imagePanY}px) scale(${imageZoom})`;
@@ -77,8 +82,16 @@ function resetImageZoom() {
   applyImageZoom();
 }
 
+function syncImageZoomMode() {
+  if (!lightbox?.classList.contains("open") || lightboxImg.hidden) return;
+  const enabled = canUseCustomImageZoom();
+  lightbox.classList.toggle("desktop-zoom", enabled);
+  if (!enabled) resetImageZoom();
+}
+
 function openLightbox(src, caption = "", mediaType = "image") {
   resetImageZoom();
+  lightbox.classList.toggle("desktop-zoom", mediaType === "image" && canUseCustomImageZoom());
   if (mediaType === "video") {
     lightboxImg.hidden = true;
     lightboxImg.src = "";
@@ -99,6 +112,7 @@ function openLightbox(src, caption = "", mediaType = "image") {
 
 lightbox?.addEventListener("click", () => {
   lightbox.classList.remove("open");
+  lightbox.classList.remove("desktop-zoom");
   resetImageZoom();
   lightboxImg.src = "";
   lightboxVideo.pause();
@@ -108,7 +122,7 @@ lightbox?.addEventListener("click", () => {
 });
 lightboxImg?.addEventListener("click", (event) => {
   event.stopPropagation();
-  if (!customImageZoom) return;
+  if (!canUseCustomImageZoom()) return;
   if (imageZoom === 1) {
     imageZoom = 2;
   } else {
@@ -118,7 +132,7 @@ lightboxImg?.addEventListener("click", (event) => {
   applyImageZoom();
 });
 lightboxImg?.addEventListener("wheel", (event) => {
-  if (!customImageZoom) return;
+  if (!canUseCustomImageZoom()) return;
   event.preventDefault();
   event.stopPropagation();
   imageZoom = Math.min(4, Math.max(1, imageZoom + (event.deltaY < 0 ? 0.25 : -0.25)));
@@ -129,7 +143,7 @@ lightboxImg?.addEventListener("wheel", (event) => {
   applyImageZoom();
 }, { passive: false });
 lightboxImg?.addEventListener("pointerdown", (event) => {
-  if (!customImageZoom) return;
+  if (!canUseCustomImageZoom()) return;
   if (imageZoom <= 1) return;
   event.preventDefault();
   event.stopPropagation();
@@ -137,7 +151,7 @@ lightboxImg?.addEventListener("pointerdown", (event) => {
   imageDrag = { x: event.clientX, y: event.clientY, panX: imagePanX, panY: imagePanY };
 });
 lightboxImg?.addEventListener("pointermove", (event) => {
-  if (!customImageZoom) return;
+  if (!canUseCustomImageZoom()) return;
   if (!imageDrag) return;
   imagePanX = imageDrag.panX + event.clientX - imageDrag.x;
   imagePanY = imageDrag.panY + event.clientY - imageDrag.y;
@@ -319,7 +333,7 @@ function renderImagesOnly() {
 
     const media = mediaType === "video" ? document.createElement("video") : document.createElement("img");
     media.src = src;
-    media.style.cursor = "zoom-in";
+    media.className = "media-lightbox-trigger";
     if (mediaType === "video") {
       media.controls = false;
       media.muted = true;
