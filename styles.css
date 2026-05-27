@@ -104,6 +104,7 @@ header a:hover { border-color: var(--accent); }
   gap: 10px;
   max-height: calc(100vh - 82px);
   overflow: hidden;
+  border-radius: 10px;
 }
 
 .content {
@@ -304,6 +305,7 @@ button.danger:hover { border-color: #ff5a5a; }
   width: 14px;
   height: 14px;
   flex: 0 0 14px;
+  align-self: center;
   position: relative;
 }
 
@@ -647,7 +649,7 @@ button.danger:hover { border-color: #ff5a5a; }
     z-index: 60;
     transform: translateX(-105%);
     transition: transform 160ms ease;
-    border-radius: 0;
+    border-radius: 10px;
     max-height: none;
     visibility: hidden;
     pointer-events: none;
@@ -779,6 +781,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
   .sidebar {
     top: 65px;
+    border-radius: 10px;
   }
 
   .content { width: 100%; }
