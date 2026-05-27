@@ -282,7 +282,6 @@ const elImgUrlInput = document.getElementById("imgUrlInput");
 const elImgUrlName = document.getElementById("imgUrlName");
 const elAddMasterInput = document.getElementById("addMasterInput");
 const elTree = document.getElementById("tree");
-const elUpdatedAt = document.getElementById("updatedAt");
 const elSelectedPath = document.getElementById("selectedPath");
 const elRenameInput = document.getElementById("renameInput");
 const elAddChildInput = document.getElementById("addChildInput");
@@ -293,10 +292,6 @@ const categoryDeleteModal = document.getElementById("categoryDeleteModal");
 const categoryDeleteMessage = document.getElementById("categoryDeleteMessage");
 const cancelCategoryDeleteBtn = document.getElementById("cancelCategoryDeleteBtn");
 const confirmCategoryDeleteBtn = document.getElementById("confirmCategoryDeleteBtn");
-
-function fmtUpdated() {
-  elUpdatedAt.textContent = new Date(data.updatedAt).toLocaleString();
-}
 
 function findParent(root, id) {
   if (!root?.children) return null;
@@ -403,7 +398,6 @@ function renderTree() {
   if (!adminEnabled) return;
 
   elTree.innerHTML = "";
-  fmtUpdated();
   for (const child of data.root.children) renderNodeRow(child, 0);
   renderSelectedPanel();
 }

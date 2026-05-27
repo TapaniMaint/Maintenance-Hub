@@ -402,11 +402,6 @@ button.danger:hover { border-color: #ff5a5a; }
   white-space: nowrap;
 }
 
-#updatedAt {
-  width: fit-content;
-  max-width: 100%;
-}
-
 .breadcrumbs {
   display: flex;
   flex-wrap: wrap;
