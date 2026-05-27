@@ -608,7 +608,7 @@ button.danger:hover { border-color: #ff5a5a; }
 @media (max-width: 980px) {
   header {
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: center;
   }
 
   header .brand {
