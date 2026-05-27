@@ -242,7 +242,6 @@ function renderNodeRow(node, depth) {
     }
 
     renderAll();
-    if (isSidebarDrawer()) closeSidebar();
   });
 
   elTree.appendChild(row);

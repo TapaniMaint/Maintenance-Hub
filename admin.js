@@ -446,7 +446,6 @@ function renderNodeRow(node, depth) {
     }
 
     renderTree();
-    if (isSidebarDrawer()) closeSidebar();
   });
 
   row.addEventListener("dragstart", (event) => {
