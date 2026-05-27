@@ -165,35 +165,6 @@ lightboxImg?.addEventListener("pointercancel", () => {
 });
 lightboxVideo?.addEventListener("click", (event) => event.stopPropagation());
 
-const pageFab = document.getElementById("pageFab");
-const pageFabBtn = document.getElementById("pageFabBtn");
-const pageFabBackdrop = document.getElementById("pageFabBackdrop");
-const fabUserLink = document.getElementById("fabUserLink");
-
-if (pageFab && pageFabBtn && pageFabBackdrop && fabUserLink) {
-  fabUserLink.style.opacity = "0.55";
-  fabUserLink.style.pointerEvents = "none";
-
-  function closeFab() {
-    pageFab.classList.remove("open");
-  }
-
-  function toggleFab() {
-    pageFab.classList.toggle("open");
-  }
-
-  pageFabBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
-    toggleFab();
-  });
-
-  pageFabBackdrop.addEventListener("click", closeFab);
-
-  document.addEventListener("click", (event) => {
-    if (!pageFab.contains(event.target)) closeFab();
-  });
-}
-
 const elTree = document.getElementById("tree");
 const elUpdatedAt = document.getElementById("updatedAt");
 const elGallery = document.getElementById("gallery");

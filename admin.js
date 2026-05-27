@@ -294,32 +294,6 @@ const categoryDeleteMessage = document.getElementById("categoryDeleteMessage");
 const cancelCategoryDeleteBtn = document.getElementById("cancelCategoryDeleteBtn");
 const confirmCategoryDeleteBtn = document.getElementById("confirmCategoryDeleteBtn");
 
-const pageFab = document.getElementById("pageFab");
-const pageFabBtn = document.getElementById("pageFabBtn");
-const pageFabBackdrop = document.getElementById("pageFabBackdrop");
-const fabUserLink = document.getElementById("fabUserLink");
-
-if (pageFab && pageFabBtn && pageFabBackdrop && fabUserLink) {
-  function closeFab() {
-    pageFab.classList.remove("open");
-  }
-
-  function toggleFab() {
-    pageFab.classList.toggle("open");
-  }
-
-  pageFabBtn.addEventListener("click", (event) => {
-    event.stopPropagation();
-    toggleFab();
-  });
-
-  pageFabBackdrop.addEventListener("click", closeFab);
-  document.addEventListener("click", (event) => {
-    if (!pageFab.contains(event.target)) closeFab();
-  });
-  fabUserLink.addEventListener("click", closeFab);
-}
-
 function fmtUpdated() {
   elUpdatedAt.textContent = new Date(data.updatedAt).toLocaleString();
 }

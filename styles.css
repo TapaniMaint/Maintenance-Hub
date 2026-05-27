@@ -853,69 +853,6 @@ button.danger:hover { border-color: #ff5a5a; }
   }
 }
 
-/* ---------- Floating Page Switcher ---------- */
-.fab {
-  position: fixed;
-  right: 14px;
-  bottom: 14px;
-  z-index: 1200;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-}
-
-.fab-menu {
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.fab.open .fab-menu {
-  display: flex;
-}
-
-.fab a {
-  text-decoration: none;
-  color: var(--text);
-  background: var(--panel2);
-  border: 1px solid var(--border);
-  padding: 10px 12px;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-  white-space: nowrap;
-}
-
-.fab a:hover { border-color: var(--accent); }
-
-.fab-btn {
-  width: 54px;
-  height: 54px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-
-  color: var(--text);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
-}
-
-.fab-btn:hover { border-color: var(--accent); }
-
-.fab-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.25);
-  z-index: 1100;
-}
-
-.fab.open + .fab-backdrop {
-  display: block;
-}
-
 /* ---------- Media Lightbox (safe on iPhone/iPad) ---------- */
 .lightbox {
   position: fixed;
