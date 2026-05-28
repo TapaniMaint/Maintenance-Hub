@@ -304,7 +304,6 @@ export async function syncFromRemote(onUpdate) {
     setLocalDataRaw(remoteData);
     if (typeof onUpdate === "function") onUpdate(remoteData);
   } catch {
-    // ignore sync errors
   }
 }
 

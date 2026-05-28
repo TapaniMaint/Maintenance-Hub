@@ -60,6 +60,7 @@ function syncSidebarState() {
   const isOpen = document.body.classList.contains("sidebar-open");
   treeToggleBtn?.setAttribute("aria-expanded", String(isOpen));
   sidebar?.setAttribute("aria-hidden", String(!isOpen && isSidebarDrawer()));
+  if (overlay) overlay.hidden = !isOpen;
 }
 
 function closeSidebar() {
@@ -124,6 +125,7 @@ function syncImageZoomMode() {
 
 function openLightbox(src, caption = "", mediaType = "image") {
   resetImageZoom();
+  lightbox.hidden = false;
   lightbox.classList.toggle("desktop-zoom", mediaType === "image" && canUseCustomImageZoom());
   if (mediaType === "video") {
     lightboxImg.hidden = true;
@@ -146,6 +148,7 @@ function openLightbox(src, caption = "", mediaType = "image") {
 lightbox?.addEventListener("click", () => {
   lightbox.classList.remove("open");
   lightbox.classList.remove("desktop-zoom");
+  lightbox.hidden = true;
   resetImageZoom();
   lightboxImg.src = "";
   lightboxVideo.pause();
@@ -403,13 +406,16 @@ function renderTree() {
 }
 
 function renderNodeRow(node, depth) {
-  const row = document.createElement("div");
+  const row = document.createElement("button");
   const hasChildren = (node.children || []).length > 0;
   const isExpanded = expanded.has(node.id);
+  row.type = "button";
   row.className = "tree-item" + (node.id === selectedId ? " selected" : "");
-  row.style.marginLeft = `${depth * 12}px`;
+  row.style.setProperty("--tree-depth", String(depth));
   row.draggable = true;
   row.dataset.depth = String(depth);
+  row.setAttribute("aria-current", node.id === selectedId ? "true" : "false");
+  if (hasChildren) row.setAttribute("aria-expanded", String(isExpanded));
   if (depth > 0) row.classList.add(`depth-${Math.min(depth, 6)}`);
 
   const left = document.createElement("div");
@@ -433,7 +439,9 @@ function renderNodeRow(node, depth) {
   left.appendChild(name);
   left.appendChild(meta);
   row.appendChild(left);
-  row.appendChild(document.createElement("div"));
+  const spacer = document.createElement("span");
+  spacer.setAttribute("aria-hidden", "true");
+  row.appendChild(spacer);
 
   row.addEventListener("click", () => {
     if (selectedId !== node.id) selectedMediaKeys.clear();

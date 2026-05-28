@@ -9,44 +9,45 @@
 </head>
 
 <body>
-  <header>
-    <div class="brand">
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Equipment Services home">
       <img class="tapani-logo" src="images/logo.ico" alt="Tapani logo" />
-      <b>Equipment Services</b>
-    </div>
-    <div class="row" style="gap:10px; justify-content:flex-end;">
+      <span class="brand-title">Equipment Services</span>
+    </a>
+    <nav class="header-actions" aria-label="Primary navigation">
       <button class="iconbtn" id="treeToggleBtn" type="button" aria-controls="sidebar" aria-expanded="false">Menu</button>
-    </div>
+    </nav>
   </header>
 
-  <div class="overlay" id="overlay"></div>
+  <div class="overlay" id="overlay" hidden></div>
 
-  <div class="main">
-    <section class="panel sidebar" id="sidebar" aria-label="Category browser">
-      <div class="row" style="justify-content: space-between;">
+  <main class="main">
+    <aside class="panel sidebar" id="sidebar" aria-labelledby="browseTitle">
+      <div class="section-header">
         <div>
-          <div style="font-weight: 700;">Browse</div>
+          <h1 class="panel-title" id="browseTitle">Browse</h1>
         </div>
         <div class="sidebar-header-actions">
           <button class="sidebar-action-btn" id="collapseTreeBtn" type="button">Refresh</button>
           <button class="iconbtn sidebar-close" id="sidebarCloseBtn" type="button" aria-label="Close sidebar">Close</button>
         </div>
       </div>
-      <div class="tree" id="tree"></div>
-    </section>
-    <section class="panel content">
-      <div style="font-weight: 700; margin-bottom: 8px;">Media</div>
-      <div class="gallery" id="gallery"></div>
-      <div class="small" id="imgHint"></div>
-    </section>
-  </div>
+      <nav class="tree" id="tree" aria-label="Categories"></nav>
+    </aside>
 
-  <div class="lightbox" id="lightbox">
+    <section class="panel content" aria-labelledby="mediaTitle">
+      <h2 class="panel-title panel-title-spaced" id="mediaTitle">Media</h2>
+      <div class="gallery" id="gallery"></div>
+      <p class="small" id="imgHint"></p>
+    </section>
+  </main>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Media preview" hidden>
     <div class="frame">
       <img id="lightboxImg" alt="" />
       <video id="lightboxVideo" controls playsinline></video>
     </div>
-    <div class="caption" id="lightboxCaption"></div>
+    <p class="caption" id="lightboxCaption"></p>
   </div>
 
   <script type="module" src="user.js"></script>

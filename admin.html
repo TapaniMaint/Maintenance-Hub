@@ -9,122 +9,130 @@
 </head>
 
 <body class="admin-page">
-  <header>
-    <div class="brand">
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Equipment Services home">
       <img class="tapani-logo" src="images/logo.ico" alt="Tapani logo" />
-      <b>Equipment Services</b>
-    </div>
-    <div class="row" style="gap:10px; justify-content:flex-end;">
+      <span class="brand-title">Equipment Services</span>
+    </a>
+    <nav class="header-actions" aria-label="Primary navigation">
       <button class="iconbtn" id="treeToggleBtn" type="button" aria-controls="sidebar" aria-expanded="false">Menu</button>
-    </div>
+    </nav>
   </header>
 
-  <div class="overlay" id="overlay"></div>
+  <div class="overlay" id="overlay" hidden></div>
 
-  <div class="main">
-    <section class="panel auth-shell">
+  <main class="main">
+    <section class="panel auth-shell" aria-labelledby="adminAccessTitle">
       <div class="auth-card">
         <div class="auth-copy">
-          <h1>Admin Access</h1>
+          <h1 id="adminAccessTitle">Admin Access</h1>
           <p class="small">Sign in with a Supabase Auth account that has <code>app_metadata.role = "admin"</code>.</p>
         </div>
         <form class="auth-form" id="authForm">
+          <label class="sr-only" for="adminEmail">Admin email</label>
           <input id="adminEmail" type="email" autocomplete="username" placeholder="Admin email" required />
+          <label class="sr-only" for="adminPassword">Password</label>
           <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Password" required />
           <div class="row">
             <button id="signInBtn" type="submit">Sign in</button>
             <button id="signOutBtn" type="button" class="ghost" hidden>Sign out</button>
           </div>
         </form>
-        <div class="small" id="authSummary">Write access stays blocked until an admin session is active.</div>
+        <p class="small" id="authSummary">Write access stays blocked until an admin session is active.</p>
         <div class="status-banner" id="statusBanner" role="status" aria-live="polite"></div>
       </div>
     </section>
 
-    <section class="workspace-shell hidden" id="adminWorkspace">
-      <section class="panel sidebar" id="sidebar" aria-label="Category editor">
-        <div class="row" style="justify-content: space-between;">
+    <section class="workspace-shell hidden" id="adminWorkspace" aria-label="Admin workspace">
+      <aside class="panel sidebar" id="sidebar" aria-labelledby="categoryEditorTitle">
+        <div class="section-header">
           <div>
-            <div style="font-weight: 700;">Categories</div>
-            <div class="small">Click a row to expand or collapse it. Signed-in admins can edit and reorder nodes.</div>
+            <h2 class="panel-title" id="categoryEditorTitle">Categories</h2>
+            <p class="small">Click a row to expand or collapse it. Signed-in admins can edit and reorder nodes.</p>
           </div>
           <div class="sidebar-header-actions">
             <button class="sidebar-action-btn" id="collapseTreeBtn" type="button">Refresh</button>
             <button class="iconbtn sidebar-close" id="sidebarCloseBtn" type="button" aria-label="Close sidebar">Close</button>
           </div>
         </div>
-        <div class="tree" id="tree"></div>
-      </section>
+        <nav class="tree" id="tree" aria-label="Categories"></nav>
+      </aside>
 
-      <section class="panel content">
-        <div class="panel" style="background: var(--panel2);">
-          <div style="font-weight: 700; margin-bottom: 8px;">Add Master Category</div>
+      <section class="panel content" aria-label="Category tools">
+        <article class="panel panel-subsection" aria-labelledby="addMasterTitle">
+          <h2 class="panel-title panel-title-spaced" id="addMasterTitle">Add Master Category</h2>
           <div class="row">
+            <label class="sr-only" for="addMasterInput">Master category name</label>
             <input id="addMasterInput" type="text" placeholder="e.g., Excavator" />
             <button id="addMasterBtn" type="button">Add</button>
           </div>
-        </div>
+        </article>
 
-        <div class="panel" style="background: var(--panel2);">
-          <div style="font-weight: 700; margin-bottom: 8px;">Add Child Category</div>
+        <article class="panel panel-subsection" aria-labelledby="addChildTitle">
+          <h2 class="panel-title panel-title-spaced" id="addChildTitle">Add Child Category</h2>
           <div class="row">
+            <label class="sr-only" for="addChildInput">Child category name</label>
             <input id="addChildInput" type="text" placeholder="New child name..." />
             <button id="addChildBtn" type="button">Add</button>
             <button id="deleteBtn" class="danger" type="button">Delete selected</button>
           </div>
-          <div class="small-child-category">Delete removes the selected node and everything under it.</div>
-        </div>
+          <p class="small-child-category">Delete removes the selected node and everything under it.</p>
+        </article>
 
-        <div class="panel" style="background: var(--panel2);">
+        <article class="panel panel-subsection" aria-labelledby="selectedCategoryTitle">
           <div class="selectedCategory">
-            <div style="font-weight: 700;">Selected Category</div>
-            <div class="small" id="selectedPath">--</div>
+            <h2 class="panel-title" id="selectedCategoryTitle">Selected Category</h2>
+            <p class="small" id="selectedPath">--</p>
           </div>
-          <div style="font-weight: 700; margin-bottom: 8px;">Rename</div>
+          <h3 class="panel-title panel-title-spaced">Rename</h3>
           <div class="row">
+            <label class="sr-only" for="renameInput">Selected category name</label>
             <input id="renameInput" type="text" placeholder="Node name..." />
             <button id="renameBtn" type="button">Save</button>
           </div>
-        </div>
+        </article>
 
-        <div class="panel" style="background: var(--panel2);">
-          <div style="font-weight: 700; margin-bottom: 8px;">Media on This Node</div>
+        <article class="panel panel-subsection" aria-labelledby="nodeMediaTitle">
+          <h2 class="panel-title panel-title-spaced" id="nodeMediaTitle">Media on This Node</h2>
           <div class="row">
+            <label class="sr-only" for="imgInput">Upload media files</label>
             <input id="imgInput" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.ogv" multiple />
             <button id="addImagesBtn" type="button">Add media</button>
             <button id="clearImagesBtn" class="danger" type="button" disabled>Delete selected media</button>
           </div>
-          <div class="small">Uploads allow JPG, PNG, GIF, WebP up to 5 MB, or MP4, MOV, WebM, OGV up to 50 MB. Edit the display name below; the original file name stays read-only.</div>
-          <div style="height: 10px;"></div>
+          <p class="small">Uploads allow JPG, PNG, GIF, WebP up to 5 MB, or MP4, MOV, WebM, OGV up to 50 MB. Edit the display name below; the original file name stays read-only.</p>
+          <div class="media-gallery-spacer"></div>
           <div class="gallery" id="gallery"></div>
-        </div>
+        </article>
 
-        <div class="panel" style="background: var(--panel2); margin-bottom: 10px;">
-          <div style="font-weight: 700; margin-bottom: 8px;">Add Media by Link</div>
+        <article class="panel panel-subsection panel-subsection-last" aria-labelledby="linkMediaTitle">
+          <h2 class="panel-title panel-title-spaced" id="linkMediaTitle">Add Media by Link</h2>
           <div class="row">
+            <label class="sr-only" for="imgUrlInput">Media URL</label>
             <input id="imgUrlInput" type="text" placeholder="Paste an HTTPS image or video link" />
-            <input id="imgUrlName" type="text" placeholder="Optional name (e.g., Engine Bay)" style="max-width: 280px;" />
+            <label class="sr-only" for="imgUrlName">Optional media name</label>
+            <input class="url-name-input" id="imgUrlName" type="text" placeholder="Optional name (e.g., Engine Bay)" />
             <button id="addImgUrlBtn" type="button">Add link</button>
           </div>
-          <div class="small">OneDrive links are normalized with <code>download=1</code> when needed.</div>
-        </div>
+          <p class="small">OneDrive links are normalized with <code>download=1</code> when needed.</p>
+        </article>
       </section>
     </section>
-  </div>
+  </main>
 
-  <div class="lightbox" id="lightbox">
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Media preview" hidden>
     <div class="frame">
       <img id="lightboxImg" alt="" />
       <video id="lightboxVideo" controls playsinline></video>
     </div>
-    <div class="caption" id="lightboxCaption"></div>
+    <p class="caption" id="lightboxCaption"></p>
   </div>
 
   <div class="confirm-modal" id="categoryDeleteModal" aria-hidden="true">
-    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="categoryDeleteTitle">
-      <div class="confirm-title" id="categoryDeleteTitle">Delete category?</div>
-      <div class="confirm-copy" id="categoryDeleteMessage"></div>
-      <div class="confirm-warning">This also deletes every child category and media item under it.</div>
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="categoryDeleteTitle" aria-describedby="categoryDeleteMessage">
+      <h2 class="confirm-title" id="categoryDeleteTitle">Delete category?</h2>
+      <p class="confirm-copy" id="categoryDeleteMessage"></p>
+      <p class="confirm-warning">This also deletes every child category and media item under it.</p>
       <div class="confirm-actions">
         <button id="cancelCategoryDeleteBtn" class="ghost" type="button">Cancel</button>
         <button id="confirmCategoryDeleteBtn" class="danger" type="button">Delete category</button>
