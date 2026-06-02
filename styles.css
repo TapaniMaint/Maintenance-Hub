@@ -94,14 +94,18 @@ body.sidebar-open {
 }
 
 .admin-page .auth-shell,
-.admin-page .workspace-shell {
+.admin-page .workspace-shell,
+.admin-page .content {
   width: 100%;
+  max-width: 100%;
 }
 
 .admin-page .workspace-shell {
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   align-items: start;
+  height: calc(100dvh - 82px);
+  min-height: 0;
 }
 
 .panel {
@@ -149,13 +153,15 @@ body.sidebar-open {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: calc(100vh - 82px);
+  height: 100%;
+  max-height: calc(100dvh - 82px);
   overflow: hidden;
   border-radius: 10px;
 }
 
 .content {
-  flex: 1;
+  flex: 1 1 auto;
+  justify-self: stretch;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -170,8 +176,9 @@ body.sidebar-open {
 }
 
 .auth-shell {
-  flex: 0 0 360px;
-  align-self: flex-start;
+  flex: 0 1 auto;
+  align-self: stretch;
+  height: fit-content;
 }
 
 .auth-card {
@@ -337,7 +344,7 @@ button.danger:hover { border-color: #ff5a5a; }
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: calc(100vh - 190px);
+  max-height: none;
   padding-right: 4px;
   -webkit-overflow-scrolling: touch;
 }
@@ -542,6 +549,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
 #imgUrlName {
   flex: 0 1 220px;
+  
 }
 
 .url-name-input {
@@ -720,7 +728,7 @@ button.danger:hover { border-color: #ff5a5a; }
   }
 
   .auth-shell {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     width: 100%;
   }
 
@@ -733,6 +741,7 @@ button.danger:hover { border-color: #ff5a5a; }
     width: min(92vw, 420px);
     max-width: 420px;
     min-width: 0;
+    height: auto;
     z-index: 60;
     transform: translateX(-105%);
     transition: transform 160ms ease;
@@ -757,16 +766,18 @@ button.danger:hover { border-color: #ff5a5a; }
   .workspace-shell {
     width: 100%;
     gap: 10px;
+    height: auto;
   }
 
   .admin-page .workspace-shell {
     display: flex;
+    height: auto;
   }
 }
 
-@media (max-width: 1200px) {
+@media (min-width: 981px) and (max-width: 1200px) {
   .admin-page .workspace-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
   }
 
   .admin-page .sidebar,
@@ -805,7 +816,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
   .workspace-shell { flex-direction: column; }
   .auth-shell {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     margin-bottom: 10px;
   }
 
@@ -836,8 +847,9 @@ button.danger:hover { border-color: #ff5a5a; }
     font-size: 14px;
     line-height: 1.2;
     border-radius: 8px;
-  }
   
+  }
+
   #imgInput {
     padding: 4px 8px;
     min-height: 34px;
@@ -866,6 +878,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
   #imgUrlName {
     max-width: none !important;
+    
   }
 
   .sidebar {
@@ -874,7 +887,7 @@ button.danger:hover { border-color: #ff5a5a; }
   }
 
   .content { width: 100%; }
-  .tree { max-height: calc(100vh - 260px); }
+  .tree { max-height: none; }
 
   .tree-item {
     align-items: flex-start;
