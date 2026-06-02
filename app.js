@@ -110,6 +110,23 @@ function publicStorageUrl(path) {
   return `${SUPABASE_CONFIG.url}/storage/v1/object/public/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
 }
 
+export function storagePathFromMedia(item) {
+  if (item?.storagePath) return item.storagePath;
+  const value = item?.url || item?.dataUrl || "";
+  if (typeof value !== "string" || !value) return "";
+
+  const marker = `/storage/v1/object/public/${SUPABASE_CONFIG.storageBucket}/`;
+  try {
+    const parsed = new URL(value, window.location.href);
+    const markerIndex = parsed.pathname.indexOf(marker);
+    if (markerIndex === -1) return "";
+    const path = parsed.pathname.slice(markerIndex + marker.length);
+    return decodeURIComponent(path);
+  } catch {
+    return "";
+  }
+}
+
 let supportsMediaFileName = true;
 
 function missingFileNameColumn(error) {
@@ -157,6 +174,20 @@ function safeStorageSegment(value, fallback = "item") {
     .replace(/^-+|-+$/g, "");
 
   return cleaned || fallback;
+}
+
+function fileNameFromStoragePath(path) {
+  const value = String(path || "");
+  const lastSegment = value.split("/").filter(Boolean).pop() || "";
+  return lastSegment || "media";
+}
+
+function mediaStoragePathFor(categoryPath, item) {
+  const folderPath = (categoryPath.length ? categoryPath : ["Uncategorized"])
+    .map((segment) => safeStorageSegment(segment))
+    .join("/");
+  const fileName = safeStorageSegment(item?.fileName || fileNameFromStoragePath(storagePathFromMedia(item)), "media");
+  return `${folderPath}/${fileName}`;
 }
 
 async function requestJson(url, options = {}) {
@@ -407,7 +438,7 @@ export async function uploadMediaFile(file, categoryId, categoryPath = []) {
     .map((segment) => safeStorageSegment(segment))
     .join("/");
   const safeName = safeStorageSegment(file.name, "media");
-  const path = `${folderPath}/${id}-${safeName}`;
+  const path = `${folderPath}/${safeName}`;
   const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
 
   await requestJson(url, {
@@ -427,6 +458,41 @@ export async function uploadMediaFile(file, categoryId, categoryPath = []) {
     url: publicStorageUrl(path),
     storagePath: path
   };
+}
+
+export async function alignMediaStoragePaths(root) {
+  if (!remoteEnabled()) return;
+  await requireAdminAccessToken();
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  async function visit(node, categoryPath) {
+    const nextPath = node.id === "root" ? [] : [...categoryPath, node.name];
+
+    for (const img of node.images || []) {
+      const currentPath = storagePathFromMedia(img);
+      if (!currentPath) continue;
+
+      const nextStoragePath = mediaStoragePathFor(nextPath, img);
+      if (currentPath === nextStoragePath) continue;
+
+      const { error } = await supabase.storage
+        .from(SUPABASE_CONFIG.storageBucket)
+        .move(currentPath, nextStoragePath);
+
+      if (error) {
+        throw new Error(`Supabase storage move failed: ${currentPath} -> ${nextStoragePath}: ${error.message}`);
+      }
+
+      img.storagePath = nextStoragePath;
+      img.url = publicStorageUrl(nextStoragePath);
+    }
+
+    for (const child of node.children || []) {
+      await visit(child, nextPath);
+    }
+  }
+
+  await visit(root, []);
 }
 
 export async function removeStorageObject(path) {
@@ -450,7 +516,25 @@ export async function removeStorageObjects(paths) {
     if (error) {
       throw new Error(`Supabase storage cleanup failed: ${error.message}`);
     }
+
+    const stillPresent = [];
+    for (const path of chunk) {
+      if (await storageObjectExists(path)) stillPresent.push(path);
+    }
+
+    if (stillPresent.length) {
+      throw new Error(`Supabase storage cleanup failed. Object still exists: ${stillPresent.join(", ")}`);
+    }
   }
+}
+
+async function storageObjectExists(path) {
+  const { data, error } = await supabase.storage
+    .from(SUPABASE_CONFIG.storageBucket)
+    .download(path);
+
+  if (error) return false;
+  return !!data;
 }
 
 export function findNode(root, id, path = []) {

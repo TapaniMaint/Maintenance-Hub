@@ -6,7 +6,9 @@ import {
   countDescendants,
   removeNodeById,
   uploadMediaFile,
-  removeStorageObject
+  removeStorageObject,
+  storagePathFromMedia,
+  alignMediaStoragePaths
 } from "./app.js";
 import {
   getUser,
@@ -365,7 +367,8 @@ function moveCategory(draggedId, targetId, position) {
 
 function collectStoragePaths(node, paths = []) {
   for (const img of node?.images || []) {
-    if (img.storagePath) paths.push(img.storagePath);
+    const path = storagePathFromMedia(img);
+    if (path) paths.push(path);
   }
   for (const child of node?.children || []) {
     collectStoragePaths(child, paths);
@@ -683,7 +686,7 @@ function renderSelectedPanel() {
       event.stopPropagation();
       const name = displayMediaName(img, "this media item");
       if (!window.confirm(`Delete "${name}" from this node?`)) return;
-      await removeStorageObject(img.storagePath);
+      await removeStorageObject(storagePathFromMedia(img));
       selectedMediaKeys.delete(key);
       node.images.splice(index, 1);
       await persistData();
@@ -730,6 +733,7 @@ function validateUploadFiles(files) {
 
 async function persistData() {
   try {
+    await alignMediaStoragePaths(data.root);
     await saveData(data);
     data = loadData();
     renderTree();
@@ -939,7 +943,7 @@ elClearImagesBtn?.addEventListener("click", async () => {
     if (!window.confirm(`Delete ${label} from this node?`)) return;
 
     for (const { img } of selected) {
-      await removeStorageObject(img.storagePath);
+      await removeStorageObject(storagePathFromMedia(img));
     }
 
     const selectedKeys = new Set(selected.map((item) => item.key));
