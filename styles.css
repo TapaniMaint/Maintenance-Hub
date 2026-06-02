@@ -989,7 +989,7 @@ button.danger:hover { border-color: #ff5a5a; }
   inset: 0;
   width: 100dvw;
   height: 100dvh;
-  background: rgba(0,0,0,0.88);
+  background: #000;
   display: none;
   z-index: 1000;
   padding-top: max(16px, env(safe-area-inset-top));
@@ -999,10 +999,11 @@ button.danger:hover { border-color: #ff5a5a; }
   align-items: center;
   justify-content: center;
 
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
   touch-action: none;
+  overscroll-behavior: none;
+  isolation: isolate;
+  contain: layout paint;
 }
 
 .lightbox.open {
@@ -1016,7 +1017,10 @@ button.danger:hover { border-color: #ff5a5a; }
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  background: #000;
   touch-action: none;
+  contain: layout paint;
 }
 
 .lightbox img,
@@ -1025,7 +1029,11 @@ button.danger:hover { border-color: #ff5a5a; }
   max-height: 100%;
   object-fit: contain;
   display: block;
-  border-radius: 12px;
+  border-radius: 0;
+  background: #000;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0) scale(1);
+  will-change: transform;
 }
 
 .lightbox img {

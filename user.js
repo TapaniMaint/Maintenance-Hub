@@ -78,7 +78,7 @@ function activeLightboxMedia() {
 }
 
 function applyImageZoom() {
-  const transform = `translate(${imagePanX}px, ${imagePanY}px) scale(${imageZoom})`;
+  const transform = `translate3d(${imagePanX}px, ${imagePanY}px, 0) scale(${imageZoom})`;
   [lightboxImg, lightboxVideo].forEach((media) => {
     if (!media) return;
     media.style.transform = transform;
@@ -102,6 +102,14 @@ function pointerDistance(a, b) {
 
 function pointerCenter(a, b) {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+function normalizeImageZoom() {
+  if (imageZoom <= 1.01) {
+    imageZoom = 1;
+    imagePanX = 0;
+    imagePanY = 0;
+  }
 }
 
 function syncImageZoomMode() {
@@ -162,10 +170,7 @@ lightboxImg?.addEventListener("wheel", (event) => {
   event.preventDefault();
   event.stopPropagation();
   imageZoom = Math.min(4, Math.max(1, imageZoom + (event.deltaY < 0 ? 0.25 : -0.25)));
-  if (imageZoom === 1) {
-    imagePanX = 0;
-    imagePanY = 0;
-  }
+  normalizeImageZoom();
   applyImageZoom();
 }, { passive: false });
 function handleMediaPointerDown(event) {
@@ -217,10 +222,7 @@ function handleMediaPointerMove(event) {
       imageZoom = Math.min(4, Math.max(1, imagePinch.zoom * (distance / imagePinch.distance)));
       imagePanX = imagePinch.panX + center.x - imagePinch.centerX;
       imagePanY = imagePinch.panY + center.y - imagePinch.centerY;
-      if (imageZoom === 1) {
-        imagePanX = 0;
-        imagePanY = 0;
-      }
+      normalizeImageZoom();
       applyImageZoom();
       return;
     }
