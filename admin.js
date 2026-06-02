@@ -93,6 +93,7 @@ const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
 const lightboxVideo = document.getElementById("lightboxVideo");
 const lightboxCaption = document.getElementById("lightboxCaption");
+const lightboxCloseBtn = document.getElementById("lightboxCloseBtn");
 let imageZoom = 1;
 let imagePanX = 0;
 let imagePanY = 0;
@@ -174,7 +175,7 @@ function openLightbox(src, caption = "", mediaType = "image") {
   document.body.style.overflow = "hidden";
 }
 
-lightbox?.addEventListener("click", () => {
+function closeLightbox() {
   lightbox.classList.remove("open");
   lightbox.classList.remove("desktop-zoom");
   lightbox.hidden = true;
@@ -185,6 +186,15 @@ lightbox?.addEventListener("click", () => {
   lightboxVideo.removeAttribute("src");
   lightboxVideo.load();
   document.body.style.overflow = "";
+}
+
+lightbox?.addEventListener("click", closeLightbox);
+lightboxCloseBtn?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  closeLightbox();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && lightbox?.classList.contains("open")) closeLightbox();
 });
 lightboxImg?.addEventListener("click", (event) => {
   event.stopPropagation();

@@ -1016,6 +1016,30 @@ button.danger:hover { border-color: #ff5a5a; }
   display: flex;
 }
 
+.lightbox-close {
+  position: fixed;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  z-index: 1001;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.lightbox-close:hover {
+  border-color: #fff;
+  background: rgba(30, 30, 30, 0.88);
+}
+
 .lightbox .frame {
   position: relative;
   width: 100%;
