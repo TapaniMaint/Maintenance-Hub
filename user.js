@@ -46,6 +46,7 @@ overlay?.addEventListener("click", closeSidebar);
 sidebarCloseBtn?.addEventListener("click", closeSidebar);
 collapseTreeBtn?.addEventListener("click", () => {
   expanded.clear();
+  if (elCategorySearch) elCategorySearch.value = "";
   saveExpanded();
   renderAll();
 });
@@ -278,8 +279,12 @@ function normalizeSearch(value) {
 
 function nodeMatchesSearch(node, query) {
   if (!query) return true;
-  if (normalizeSearch(node.name).includes(query)) return true;
+  if (nodeNameMatchesSearch(node, query)) return true;
   return (node.children || []).some((child) => nodeMatchesSearch(child, query));
+}
+
+function nodeNameMatchesSearch(node, query) {
+  return normalizeSearch(node.name).includes(query);
 }
 
 function renderSidebarTree() {
@@ -304,10 +309,14 @@ function renderSidebarTree() {
   }
 }
 
-function renderNodeRow(node, depth, searchQuery = "") {
+function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = false) {
   const row = document.createElement("button");
   const hasChildren = (node.children || []).length > 0;
-  const isExpanded = searchQuery ? true : expanded.has(node.id);
+  const directSearchMatch = searchQuery && nodeNameMatchesSearch(node, searchQuery);
+  const descendantSearchMatch = searchQuery && (node.children || []).some((child) => nodeMatchesSearch(child, searchQuery));
+  const shouldRevealSearchSubtree = revealSearchSubtree || directSearchMatch;
+  const shouldForceOpenForSearch = searchQuery && !directSearchMatch && descendantSearchMatch;
+  const isExpanded = hasChildren && (expanded.has(node.id) || shouldForceOpenForSearch);
   row.type = "button";
   row.className = "tree-item" + (node.id === selectedId ? " selected" : "");
   row.style.setProperty("--tree-depth", String(depth));
@@ -356,8 +365,8 @@ function renderNodeRow(node, depth, searchQuery = "") {
 
   if (hasChildren && isExpanded) {
     for (const child of node.children) {
-      if (searchQuery && !nodeMatchesSearch(child, searchQuery)) continue;
-      renderNodeRow(child, depth + 1, searchQuery);
+      if (searchQuery && !shouldRevealSearchSubtree && !nodeMatchesSearch(child, searchQuery)) continue;
+      renderNodeRow(child, depth + 1, searchQuery, shouldRevealSearchSubtree);
     }
   }
 }
