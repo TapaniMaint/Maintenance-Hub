@@ -142,6 +142,7 @@ function openLightbox(src, caption = "", mediaType = "image") {
   }
   lightboxCaption.textContent = caption;
   lightbox.classList.add("open");
+  document.body.classList.add("lightbox-open");
   document.body.style.overflow = "hidden";
 }
 
@@ -149,6 +150,7 @@ lightbox?.addEventListener("click", () => {
   lightbox.classList.remove("open");
   lightbox.classList.remove("desktop-zoom");
   lightbox.hidden = true;
+  document.body.classList.remove("lightbox-open");
   resetImageZoom();
   lightboxImg.src = "";
   lightboxVideo.pause();

@@ -26,6 +26,10 @@ body.sidebar-open {
   touch-action: none;
 }
 
+body.lightbox-open {
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
 .site-header {
   display: flex;
   align-items: center;
@@ -862,16 +866,24 @@ button.danger:hover { border-color: #ff5a5a; }
     padding: 6px 9px;
     min-height: 34px;
     height: 34px;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.2;
     border-radius: 8px;
   
   }
 
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  .card .media-name-input {
+    font-size: 16px;
+  }
+
   #imgInput {
     padding: 4px 8px;
     min-height: 34px;
-    font-size: 12px;
+    font-size: 16px;
     line-height: 1.2;
     border-radius: 8px;
   }
@@ -990,6 +1002,7 @@ button.danger:hover { border-color: #ff5a5a; }
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
 .lightbox.open {
@@ -1003,6 +1016,7 @@ button.danger:hover { border-color: #ff5a5a; }
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
 .lightbox img,
@@ -1015,8 +1029,12 @@ button.danger:hover { border-color: #ff5a5a; }
 }
 
 .lightbox img {
-  touch-action: pan-x pan-y;
+  touch-action: pan-x pan-y pinch-zoom;
   transform-origin: center center;
+}
+
+.lightbox video {
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
 .lightbox.desktop-zoom img {
