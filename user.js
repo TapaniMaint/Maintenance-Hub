@@ -172,6 +172,7 @@ const elTree = document.getElementById("tree");
 const elUpdatedAt = document.getElementById("updatedAt");
 const elGallery = document.getElementById("gallery");
 const elImgHint = document.getElementById("imgHint");
+const elCategorySearch = document.getElementById("categorySearch");
 
 function loadExpanded() {
   try {
@@ -193,21 +194,42 @@ function fmtUpdated() {
   elUpdatedAt.textContent = new Date(data.updatedAt).toLocaleString();
 }
 
+function normalizeSearch(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function nodeMatchesSearch(node, query) {
+  if (!query) return true;
+  if (normalizeSearch(node.name).includes(query)) return true;
+  return (node.children || []).some((child) => nodeMatchesSearch(child, query));
+}
+
 function renderSidebarTree() {
   if (!elTree) return;
 
   elTree.innerHTML = "";
   fmtUpdated();
 
+  const searchQuery = normalizeSearch(elCategorySearch?.value);
+  let visibleCount = 0;
   for (const child of data.root.children) {
-    renderNodeRow(child, 0);
+    if (!nodeMatchesSearch(child, searchQuery)) continue;
+    visibleCount += 1;
+    renderNodeRow(child, 0, searchQuery);
+  }
+
+  if (searchQuery && visibleCount === 0) {
+    const empty = document.createElement("div");
+    empty.className = "tree-empty";
+    empty.textContent = "No matching categories.";
+    elTree.appendChild(empty);
   }
 }
 
-function renderNodeRow(node, depth) {
+function renderNodeRow(node, depth, searchQuery = "") {
   const row = document.createElement("button");
   const hasChildren = (node.children || []).length > 0;
-  const isExpanded = expanded.has(node.id);
+  const isExpanded = searchQuery ? true : expanded.has(node.id);
   row.type = "button";
   row.className = "tree-item" + (node.id === selectedId ? " selected" : "");
   row.style.setProperty("--tree-depth", String(depth));
@@ -254,8 +276,11 @@ function renderNodeRow(node, depth) {
 
   elTree.appendChild(row);
 
-  if (hasChildren && expanded.has(node.id)) {
-    for (const child of node.children) renderNodeRow(child, depth + 1);
+  if (hasChildren && isExpanded) {
+    for (const child of node.children) {
+      if (searchQuery && !nodeMatchesSearch(child, searchQuery)) continue;
+      renderNodeRow(child, depth + 1, searchQuery);
+    }
   }
 }
 
@@ -358,5 +383,7 @@ function renderAll() {
 }
 
 syncFromRemote(applyRemote);
+
+elCategorySearch?.addEventListener("input", renderSidebarTree);
 
 renderAll();

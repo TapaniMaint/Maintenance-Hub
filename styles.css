@@ -233,6 +233,7 @@ body.sidebar-open {
 input[type="text"],
 input[type="email"],
 input[type="password"],
+input[type="search"],
 input[type="file"] {
   width: 100%;
   padding: 10px 12px;
@@ -336,6 +337,23 @@ button.danger:hover { border-color: #ff5a5a; }
   color: var(--muted);
   margin: 10px 0 0 0;
 }
+
+.sidebar-search {
+  display: block;
+  width: 100%;
+}
+
+.sidebar-search input {
+  height: 40px;
+  border-radius: 8px;
+}
+
+.tree-empty {
+  padding: 10px 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .tree {
   display: flex;
   flex-direction: column;
