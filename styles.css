@@ -27,7 +27,7 @@ body.sidebar-open {
 }
 
 body.lightbox-open {
-  touch-action: pan-x pan-y pinch-zoom;
+  touch-action: none;
 }
 
 .site-header {
@@ -1002,7 +1002,7 @@ button.danger:hover { border-color: #ff5a5a; }
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y pinch-zoom;
+  touch-action: none;
 }
 
 .lightbox.open {
@@ -1016,7 +1016,7 @@ button.danger:hover { border-color: #ff5a5a; }
   display: flex;
   align-items: center;
   justify-content: center;
-  touch-action: pan-x pan-y pinch-zoom;
+  touch-action: none;
 }
 
 .lightbox img,
@@ -1029,12 +1029,13 @@ button.danger:hover { border-color: #ff5a5a; }
 }
 
 .lightbox img {
-  touch-action: pan-x pan-y pinch-zoom;
+  touch-action: none;
   transform-origin: center center;
 }
 
 .lightbox video {
-  touch-action: pan-x pan-y pinch-zoom;
+  touch-action: none;
+  transform-origin: center center;
 }
 
 .lightbox.desktop-zoom img {

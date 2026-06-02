@@ -97,15 +97,25 @@ let imageZoom = 1;
 let imagePanX = 0;
 let imagePanY = 0;
 let imageDrag = null;
+let imagePinch = null;
+const imagePointers = new Map();
 const desktopImageZoomQuery = window.matchMedia?.("(min-width: 981px) and (pointer: fine)");
 
 function canUseCustomImageZoom() {
   return desktopImageZoomQuery?.matches ?? window.innerWidth > 980;
 }
 
+function activeLightboxMedia() {
+  return lightboxVideo && !lightboxVideo.hidden ? lightboxVideo : lightboxImg;
+}
+
 function applyImageZoom() {
-  lightboxImg.style.transform = `translate(${imagePanX}px, ${imagePanY}px) scale(${imageZoom})`;
-  lightboxImg.classList.toggle("zoomed", imageZoom > 1);
+  const transform = `translate(${imagePanX}px, ${imagePanY}px) scale(${imageZoom})`;
+  [lightboxImg, lightboxVideo].forEach((media) => {
+    if (!media) return;
+    media.style.transform = transform;
+    media.classList.toggle("zoomed", imageZoom > 1);
+  });
 }
 
 function resetImageZoom() {
@@ -113,7 +123,17 @@ function resetImageZoom() {
   imagePanX = 0;
   imagePanY = 0;
   imageDrag = null;
+  imagePinch = null;
+  imagePointers.clear();
   applyImageZoom();
+}
+
+function pointerDistance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function pointerCenter(a, b) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 
 function syncImageZoomMode() {
@@ -180,26 +200,82 @@ lightboxImg?.addEventListener("wheel", (event) => {
   }
   applyImageZoom();
 }, { passive: false });
-lightboxImg?.addEventListener("pointerdown", (event) => {
-  if (!canUseCustomImageZoom()) return;
-  if (imageZoom <= 1) return;
-  event.preventDefault();
+function handleMediaPointerDown(event) {
   event.stopPropagation();
-  lightboxImg.setPointerCapture(event.pointerId);
+  const media = activeLightboxMedia();
+  if (!media || event.currentTarget !== media) return;
+  media.setPointerCapture?.(event.pointerId);
+
+  if (event.pointerType === "touch") {
+    imagePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (imagePointers.size === 1 && imageZoom > 1) {
+      event.preventDefault();
+      imageDrag = { x: event.clientX, y: event.clientY, panX: imagePanX, panY: imagePanY };
+    }
+    if (imagePointers.size >= 2) {
+      event.preventDefault();
+      const points = [...imagePointers.values()];
+      const center = pointerCenter(points[0], points[1]);
+      imagePinch = {
+        distance: pointerDistance(points[0], points[1]),
+        zoom: imageZoom,
+        centerX: center.x,
+        centerY: center.y,
+        panX: imagePanX,
+        panY: imagePanY
+      };
+      imageDrag = null;
+    }
+    return;
+  }
+
+  if (!canUseCustomImageZoom() || imageZoom <= 1) return;
+  event.preventDefault();
   imageDrag = { x: event.clientX, y: event.clientY, panX: imagePanX, panY: imagePanY };
-});
-lightboxImg?.addEventListener("pointermove", (event) => {
-  if (!canUseCustomImageZoom()) return;
+}
+
+function handleMediaPointerMove(event) {
+  const media = activeLightboxMedia();
+  if (!media || event.currentTarget !== media) return;
+
+  if (event.pointerType === "touch" && imagePointers.has(event.pointerId)) {
+    imagePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (imagePointers.size >= 2 && imagePinch) {
+      event.preventDefault();
+      const points = [...imagePointers.values()];
+      const center = pointerCenter(points[0], points[1]);
+      const distance = pointerDistance(points[0], points[1]);
+      if (imagePinch.distance < 1) return;
+      imageZoom = Math.min(4, Math.max(1, imagePinch.zoom * (distance / imagePinch.distance)));
+      imagePanX = imagePinch.panX + center.x - imagePinch.centerX;
+      imagePanY = imagePinch.panY + center.y - imagePinch.centerY;
+      if (imageZoom === 1) {
+        imagePanX = 0;
+        imagePanY = 0;
+      }
+      applyImageZoom();
+      return;
+    }
+  }
+
   if (!imageDrag) return;
+  if (event.pointerType === "touch" || canUseCustomImageZoom()) event.preventDefault();
   imagePanX = imageDrag.panX + event.clientX - imageDrag.x;
   imagePanY = imageDrag.panY + event.clientY - imageDrag.y;
   applyImageZoom();
-});
-lightboxImg?.addEventListener("pointerup", () => {
+}
+
+function handleMediaPointerEnd(event) {
+  imagePointers.delete(event.pointerId);
+  imagePinch = null;
   imageDrag = null;
-});
-lightboxImg?.addEventListener("pointercancel", () => {
-  imageDrag = null;
+}
+
+[lightboxImg, lightboxVideo].forEach((media) => {
+  media?.addEventListener("pointerdown", handleMediaPointerDown);
+  media?.addEventListener("pointermove", handleMediaPointerMove);
+  media?.addEventListener("pointerup", handleMediaPointerEnd);
+  media?.addEventListener("pointercancel", handleMediaPointerEnd);
 });
 lightboxVideo?.addEventListener("click", (event) => event.stopPropagation());
 
