@@ -343,6 +343,7 @@ button.danger:hover { border-color: #ff5a5a; }
 }
 
 .tree-item {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -441,6 +442,26 @@ button.danger:hover { border-color: #ff5a5a; }
 .tree-item.drag-over {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
+}
+.tree-item.drop-before::before,
+.tree-item.drop-after::after {
+  content: "";
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+  pointer-events: none;
+}
+.tree-item.drop-before::before {
+  top: -5px;
+}
+.tree-item.drop-after::after {
+  bottom: -5px;
+}
+.tree-item.drop-inside {
+  background: #142132;
 }
 
 .selectedCategory {

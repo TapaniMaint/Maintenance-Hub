@@ -307,6 +307,62 @@ function findParent(root, id) {
   return null;
 }
 
+function clearTreeDropState() {
+  for (const item of elTree?.querySelectorAll(".drag-over, .drop-before, .drop-after, .drop-inside") || []) {
+    item.classList.remove("drag-over", "drop-before", "drop-after", "drop-inside");
+  }
+}
+
+function dropPositionForEvent(event, row) {
+  const rect = row.getBoundingClientRect();
+  const offsetY = event.clientY - rect.top;
+  if (offsetY < rect.height * 0.25) return "before";
+  if (offsetY > rect.height * 0.75) return "after";
+  return "inside";
+}
+
+function isDescendantOrSelf(node, id) {
+  if (!node) return false;
+  if (node.id === id) return true;
+  return (node.children || []).some((child) => isDescendantOrSelf(child, id));
+}
+
+function moveCategory(draggedId, targetId, position) {
+  if (!draggedId || !targetId || draggedId === targetId) return false;
+
+  const dragged = findNode(data.root, draggedId)?.node;
+  if (!dragged) return false;
+  if (isDescendantOrSelf(dragged, targetId)) return false;
+
+  const draggedInfo = findParent(data.root, draggedId);
+  if (!draggedInfo) return false;
+
+  const [moved] = draggedInfo.parent.children.splice(draggedInfo.index, 1);
+
+  if (position === "inside") {
+    const target = findNode(data.root, targetId)?.node;
+    if (!target) {
+      draggedInfo.parent.children.splice(draggedInfo.index, 0, moved);
+      return false;
+    }
+    target.children = target.children || [];
+    target.children.push(moved);
+    expanded.add(target.id);
+    saveExpanded();
+    return true;
+  }
+
+  const targetInfo = findParent(data.root, targetId);
+  if (!targetInfo) {
+    draggedInfo.parent.children.splice(draggedInfo.index, 0, moved);
+    return false;
+  }
+
+  const insertIndex = position === "after" ? targetInfo.index + 1 : targetInfo.index;
+  targetInfo.parent.children.splice(insertIndex, 0, moved);
+  return true;
+}
+
 function collectStoragePaths(node, paths = []) {
   for (const img of node?.images || []) {
     if (img.storagePath) paths.push(img.storagePath);
@@ -464,39 +520,36 @@ function renderNodeRow(node, depth) {
 
   row.addEventListener("dragend", () => {
     row.classList.remove("dragging");
+    clearTreeDropState();
   });
 
   row.addEventListener("dragover", (event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
+    const position = dropPositionForEvent(event, row);
+    clearTreeDropState();
+    row.classList.add("drag-over", `drop-${position}`);
   });
 
   row.addEventListener("dragenter", (event) => {
     event.preventDefault();
-    row.classList.add("drag-over");
   });
 
   row.addEventListener("dragleave", () => {
-    row.classList.remove("drag-over");
+    row.classList.remove("drag-over", "drop-before", "drop-after", "drop-inside");
   });
 
   row.addEventListener("drop", async (event) => {
     event.preventDefault();
-    row.classList.remove("drag-over");
+    const position = dropPositionForEvent(event, row);
+    clearTreeDropState();
 
     const draggedId = event.dataTransfer.getData("text/plain");
-    if (!draggedId || draggedId === node.id) return;
-
-    const draggedInfo = findParent(data.root, draggedId);
-    const targetInfo = findParent(data.root, node.id);
-    if (!draggedInfo || !targetInfo) return;
-    if (draggedInfo.parent.id !== targetInfo.parent.id) return;
-
-    const siblings = targetInfo.parent.children;
-    const [moved] = siblings.splice(draggedInfo.index, 1);
-    let insertIndex = targetInfo.index;
-    if (draggedInfo.index < targetInfo.index) insertIndex -= 1;
-    siblings.splice(insertIndex, 0, moved);
+    if (!moveCategory(draggedId, node.id, position)) {
+      setStatus("Drop blocked. A category cannot be moved into itself or one of its child categories.", "error");
+      renderTree();
+      return;
+    }
 
     await persistData();
   });
