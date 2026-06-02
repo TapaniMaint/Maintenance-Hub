@@ -145,6 +145,20 @@ function uploadContentType(file) {
   return mimeByExtension[extension] || "application/octet-stream";
 }
 
+function safeStorageSegment(value, fallback = "item") {
+  const cleaned = String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\\/]+/g, "-")
+    .replace(/[^a-z0-9._ -]+/gi, "-")
+    .replace(/\s+/g, " ")
+    .replace(/-+/g, "-")
+    .trim()
+    .replace(/^-+|-+$/g, "");
+
+  return cleaned || fallback;
+}
+
 async function requestJson(url, options = {}) {
   const res = await fetch(url, options);
   if (!res.ok) {
@@ -378,7 +392,7 @@ async function storagePathsForRowsNotIn(ids) {
   return (rows || []).map((row) => row.storage_path).filter(Boolean);
 }
 
-export async function uploadMediaFile(file, categoryId) {
+export async function uploadMediaFile(file, categoryId, categoryPath = []) {
   const id = crypto.randomUUID?.() || uid();
   if (!remoteEnabled()) {
     return {
@@ -389,8 +403,11 @@ export async function uploadMediaFile(file, categoryId) {
     };
   }
 
-  const safeName = file.name.replace(/[^a-z0-9._-]+/gi, "-").replace(/^-+|-+$/g, "") || "media";
-  const path = `${categoryId}/${id}-${safeName}`;
+  const folderPath = (categoryPath.length ? categoryPath : [categoryId])
+    .map((segment) => safeStorageSegment(segment))
+    .join("/");
+  const safeName = safeStorageSegment(file.name, "media");
+  const path = `${folderPath}/${id}-${safeName}`;
   const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
 
   await requestJson(url, {

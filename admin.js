@@ -905,8 +905,11 @@ document.getElementById("addImagesBtn")?.addEventListener("click", async () => {
     validateUploadFiles(files);
 
     found.node.images = found.node.images || [];
+    const categoryPath = found.path
+      .filter((node) => node.id !== "root")
+      .map((node) => node.name);
     for (const file of files) {
-      found.node.images.push(await uploadMediaFile(file, selectedId));
+      found.node.images.push(await uploadMediaFile(file, selectedId, categoryPath));
     }
 
     elImgInput.value = "";
