@@ -38,6 +38,9 @@ create index if not exists categories_parent_sort_idx
 create index if not exists media_category_sort_idx
   on public.media(category_id, sort_order, name);
 
+create schema if not exists private;
+revoke all on schema private from public;
+
 alter table public.categories enable row level security;
 alter table public.media enable row level security;
 
@@ -179,6 +182,37 @@ create policy "Admin delete maintenance media files"
         and (auth.jwt() -> 'app_metadata' -> 'roles') ? 'admin'
       )
     )
+  );
+
+create or replace function private.delete_media_row_for_storage_object()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if old.bucket_id = 'maintenance-media' then
+    delete from public.media
+    where storage_path = old.name;
+  end if;
+
+  return old;
+end;
+$$;
+
+drop trigger if exists delete_media_row_for_storage_object on storage.objects;
+create trigger delete_media_row_for_storage_object
+  after delete on storage.objects
+  for each row
+  execute function private.delete_media_row_for_storage_object();
+
+delete from public.media as media
+where media.storage_path is not null
+  and not exists (
+    select 1
+    from storage.objects as object
+    where object.bucket_id = 'maintenance-media'
+      and object.name = media.storage_path
   );
 
 -- Example: mark a specific existing user as an admin.
