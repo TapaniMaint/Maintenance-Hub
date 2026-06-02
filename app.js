@@ -1,5 +1,5 @@
 import { SUPABASE_CONFIG } from "./supabase-config.js";
-import { requireAdminAccessToken } from "./supabase-client.js";
+import { requireAdminAccessToken, supabase } from "./supabase-client.js";
 
 const STORE_KEY = "maintenanceHubData_v1";
 
@@ -349,6 +349,8 @@ export async function pushRemoteData(data) {
     }
   }
 
+  const staleStoragePaths = await storagePathsForRowsNotIn(media.map(item => item.id));
+  await removeStorageObjects(staleStoragePaths);
   await deleteRowsNotIn(SUPABASE_CONFIG.mediaTable, media.map(item => item.id));
   await deleteRowsNotIn(SUPABASE_CONFIG.categoriesTable, categories.map(item => item.id));
 }
@@ -362,6 +364,18 @@ async function deleteRowsNotIn(table, ids) {
     method: "DELETE",
     headers: await apiHeaders({ admin: true, Prefer: "return=minimal" })
   });
+}
+
+async function storagePathsForRowsNotIn(ids) {
+  const filter = ids.length
+    ? `id=not.in.(${ids.map(id => `"${String(id).replaceAll('"', '\\"')}"`).join(",")})&storage_path=not.is.null`
+    : "id=not.is.null&storage_path=not.is.null";
+
+  const rows = await requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, `select=storage_path&${filter}`), {
+    headers: await apiHeaders({ admin: true, Accept: "application/json" })
+  });
+
+  return (rows || []).map((row) => row.storage_path).filter(Boolean);
 }
 
 export async function uploadMediaFile(file, categoryId) {
@@ -399,19 +413,26 @@ export async function uploadMediaFile(file, categoryId) {
 }
 
 export async function removeStorageObject(path) {
-  if (!remoteEnabled() || !path) return;
-  const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}`;
-  const res = await fetch(url, {
-    method: "DELETE",
-    headers: await apiHeaders({
-      admin: true,
-      "Content-Type": "application/json"
-    }),
-    body: JSON.stringify({ prefixes: [path] })
-  });
+  await removeStorageObjects([path]);
+}
 
-  if (!res.ok) {
-    throw new Error(`Supabase storage cleanup failed: ${res.status}`);
+export async function removeStorageObjects(paths) {
+  if (!remoteEnabled()) return;
+  const uniquePaths = [...new Set((paths || []).filter(Boolean))];
+  if (!uniquePaths.length) return;
+
+  await requireAdminAccessToken();
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  for (let index = 0; index < uniquePaths.length; index += 1000) {
+    const chunk = uniquePaths.slice(index, index + 1000);
+    const { error } = await supabase.storage
+      .from(SUPABASE_CONFIG.storageBucket)
+      .remove(chunk);
+
+    if (error) {
+      throw new Error(`Supabase storage cleanup failed: ${error.message}`);
+    }
   }
 }
 
