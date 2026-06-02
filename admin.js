@@ -286,8 +286,8 @@ function normalizeOneDriveUrl(url) {
   if (!trimmed) return "";
 
   const parsed = new URL(trimmed, window.location.href);
-  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-    throw new Error("Only HTTP and HTTPS media links are allowed.");
+  if (parsed.protocol !== "https:") {
+    throw new Error("Only HTTPS media links are allowed.");
   }
 
   if (/onedrive|sharepoint/i.test(parsed.hostname) && !parsed.searchParams.has("download")) {
@@ -307,7 +307,7 @@ function safeMediaUrl(value) {
 
   try {
     const parsed = new URL(trimmed, window.location.href);
-    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+    if (parsed.protocol === "https:") {
       return parsed.href;
     }
   } catch {

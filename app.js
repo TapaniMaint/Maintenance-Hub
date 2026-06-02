@@ -133,6 +133,16 @@ export function storagePathFromMedia(item) {
 }
 
 let supportsMediaFileName = true;
+let remoteSyncLoaded = !remoteEnabled();
+let lastRemoteSyncError = null;
+
+export function hasRemoteSyncLoaded() {
+  return !remoteEnabled() || remoteSyncLoaded;
+}
+
+export function getRemoteSyncError() {
+  return lastRemoteSyncError;
+}
 
 function missingFileNameColumn(error) {
   const message = String(error?.message || "");
@@ -349,16 +359,25 @@ export async function syncFromRemote(onUpdate) {
   if (!remoteEnabled()) return;
   try {
     const remoteData = await fetchRemoteDataWithFallback();
+    remoteSyncLoaded = true;
+    lastRemoteSyncError = null;
     if (!remoteData) return;
 
     setLocalDataRaw(remoteData);
     if (typeof onUpdate === "function") onUpdate(remoteData);
-  } catch {
+  } catch (error) {
+    remoteSyncLoaded = false;
+    lastRemoteSyncError = error;
+    console.warn("Unable to sync from Supabase.", error);
   }
 }
 
 export async function pushRemoteData(data) {
   if (!remoteEnabled()) return;
+  if (!remoteSyncLoaded) {
+    throw new Error("Supabase data has not loaded yet. Refresh after the remote connection succeeds before saving changes.");
+  }
+
   const { categories, media } = flattenTree(data.root);
 
   if (categories.length) {

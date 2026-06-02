@@ -40,7 +40,7 @@ function copyHeadersWithOptionalAuthOverride() {
     );
     console.log("Applied BASIC_AUTH_CREDENTIALS override in _headers.");
   } else {
-    console.log("BASIC_AUTH_CREDENTIALS not set; keeping placeholder Basic-Auth values from _headers.");
+    throw new Error("BASIC_AUTH_CREDENTIALS must be set before deploying admin routes.");
   }
 
   fs.writeFileSync(distHeadersFile, headersContent, "utf8");

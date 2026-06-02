@@ -2,4 +2,5 @@
   command = "npm run build && node generate-headers.js"
   publish = "dist"
 
-  
+[build.environment]
+  NODE_VERSION = "22"

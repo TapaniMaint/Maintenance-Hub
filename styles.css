@@ -245,8 +245,14 @@ input[type="file"] {
   border: 1px solid var(--border);
   background: #0c1016;
   color: var(--text);
-  outline: none;
   min-width: 0;
+}
+
+input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 button {

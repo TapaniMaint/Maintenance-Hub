@@ -383,7 +383,7 @@ function safeMediaUrl(value) {
 
   try {
     const parsed = new URL(trimmed, window.location.href);
-    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+    if (parsed.protocol === "https:") {
       return parsed.href;
     }
   } catch {
