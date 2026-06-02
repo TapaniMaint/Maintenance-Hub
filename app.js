@@ -110,6 +110,11 @@ function publicStorageUrl(path) {
   return `${SUPABASE_CONFIG.url}/storage/v1/object/public/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
 }
 
+function storageObjectUrl(path = "") {
+  const suffix = path ? `/${encodeURI(path)}` : "";
+  return `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}${suffix}`;
+}
+
 export function storagePathFromMedia(item) {
   if (item?.storagePath) return item.storagePath;
   const value = item?.url || item?.dataUrl || "";
@@ -395,9 +400,14 @@ export async function pushRemoteData(data) {
   }
 
   const staleStoragePaths = await storagePathsForRowsNotIn(media.map(item => item.id));
-  await removeStorageObjects(staleStoragePaths);
   await deleteRowsNotIn(SUPABASE_CONFIG.mediaTable, media.map(item => item.id));
   await deleteRowsNotIn(SUPABASE_CONFIG.categoriesTable, categories.map(item => item.id));
+
+  try {
+    await removeStorageObjects(staleStoragePaths);
+  } catch (error) {
+    console.warn(error);
+  }
 }
 
 async function deleteRowsNotIn(table, ids) {
@@ -499,42 +509,39 @@ export async function removeStorageObject(path) {
   await removeStorageObjects([path]);
 }
 
+function isMissingStorageObjectError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  const statusCode = String(error?.statusCode || error?.status || "");
+  return statusCode === "404" || message.includes("404") || (
+    message.includes("not found") ||
+    message.includes("resource was not found") ||
+    message.includes("object not found")
+  );
+}
+
 export async function removeStorageObjects(paths) {
   if (!remoteEnabled()) return;
   const uniquePaths = [...new Set((paths || []).filter(Boolean))];
   if (!uniquePaths.length) return;
 
   await requireAdminAccessToken();
-  if (!supabase) throw new Error("Supabase is not configured.");
 
   for (let index = 0; index < uniquePaths.length; index += 1000) {
     const chunk = uniquePaths.slice(index, index + 1000);
-    const { error } = await supabase.storage
-      .from(SUPABASE_CONFIG.storageBucket)
-      .remove(chunk);
-
-    if (error) {
-      throw new Error(`Supabase storage cleanup failed: ${error.message}`);
-    }
-
-    const stillPresent = [];
-    for (const path of chunk) {
-      if (await storageObjectExists(path)) stillPresent.push(path);
-    }
-
-    if (stillPresent.length) {
-      throw new Error(`Supabase storage cleanup failed. Object still exists: ${stillPresent.join(", ")}`);
+    try {
+      await requestJson(storageObjectUrl(), {
+        method: "DELETE",
+        headers: await apiHeaders({
+          admin: true,
+          "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({ prefixes: chunk })
+      });
+    } catch (error) {
+      if (isMissingStorageObjectError(error)) continue;
+      throw new Error(`Supabase storage cleanup failed: ${error.message}. Paths: ${chunk.join(", ")}`);
     }
   }
-}
-
-async function storageObjectExists(path) {
-  const { data, error } = await supabase.storage
-    .from(SUPABASE_CONFIG.storageBucket)
-    .download(path);
-
-  if (error) return false;
-  return !!data;
 }
 
 export function findNode(root, id, path = []) {
