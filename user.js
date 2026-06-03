@@ -19,6 +19,8 @@ const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 const sidebar = document.getElementById("sidebar");
 const collapseTreeBtn = document.getElementById("collapseTreeBtn");
+const SIDEBAR_CLOSE_ANIMATION_MS = 220;
+let sidebarCloseTimer = 0;
 
 function isSidebarDrawer() {
   return window.innerWidth <= 980;
@@ -26,19 +28,49 @@ function isSidebarDrawer() {
 
 function syncSidebarState() {
   const isOpen = document.body.classList.contains("sidebar-open");
+  const isClosing = document.body.classList.contains("sidebar-closing");
   treeToggleBtn?.setAttribute("aria-expanded", String(isOpen));
   sidebar?.setAttribute("aria-hidden", String(!isOpen && isSidebarDrawer()));
-  if (overlay) overlay.hidden = !isOpen;
+  if (overlay) overlay.hidden = !(isOpen || isClosing);
+}
+
+function clearSidebarCloseTimer() {
+  if (!sidebarCloseTimer) return;
+  window.clearTimeout(sidebarCloseTimer);
+  sidebarCloseTimer = 0;
+}
+
+function finishSidebarClose() {
+  document.body.classList.remove("sidebar-closing");
+  sidebarCloseTimer = 0;
+  syncSidebarState();
+}
+
+function openSidebar() {
+  clearSidebarCloseTimer();
+  document.body.classList.remove("sidebar-closing");
+  document.body.classList.add("sidebar-open");
+  syncSidebarState();
 }
 
 function closeSidebar() {
+  const wasOpen = document.body.classList.contains("sidebar-open");
+  clearSidebarCloseTimer();
   document.body.classList.remove("sidebar-open");
+  if (wasOpen && isSidebarDrawer()) {
+    document.body.classList.add("sidebar-closing");
+    syncSidebarState();
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    sidebarCloseTimer = window.setTimeout(finishSidebarClose, reducedMotion ? 0 : SIDEBAR_CLOSE_ANIMATION_MS);
+    return;
+  }
+  document.body.classList.remove("sidebar-closing");
   syncSidebarState();
 }
 
 function toggleSidebar() {
-  document.body.classList.toggle("sidebar-open");
-  syncSidebarState();
+  if (document.body.classList.contains("sidebar-open")) closeSidebar();
+  else openSidebar();
 }
 
 treeToggleBtn?.addEventListener("click", toggleSidebar);
