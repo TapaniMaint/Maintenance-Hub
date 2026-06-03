@@ -760,7 +760,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
 @media (max-width: 980px) {
   #sidebar {
-    margin: 9px 0 9px 9px;
+    margin: 9px 9px 9px 9px;
   }
 
   .brand {
@@ -1009,15 +1009,12 @@ button.danger:hover { border-color: #ff5a5a; }
   .card img,
   .card video { aspect-ratio: 4 / 3; }
 }
-
+}
 @media (max-width: 420px) {
   .site-header {
     padding: 10px 12px;
   }
 
-  .brand {
-    flex-basis: 100%;
-  }
 
   .brand-title {
     font-size: 16px;
@@ -1034,7 +1031,12 @@ button.danger:hover { border-color: #ff5a5a; }
 
   .sidebar {
     top: 59px;
-    width: 100vw;
+    width: calc(100vw - 18px);
+    max-width: calc(100vw - 18px);
+  }
+
+  #sidebar {
+    margin-top: 4px;
   }
 }
 
