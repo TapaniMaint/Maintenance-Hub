@@ -26,6 +26,17 @@ const themeModeInputs = [...document.querySelectorAll('input[name="themeMode"]')
 const SIDEBAR_CLOSE_ANIMATION_MS = 220;
 let sidebarCloseTimer = 0;
 
+function applyStoredTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === "light" || stored === "dark") {
+      document.documentElement.dataset.theme = stored;
+    }
+  } catch {
+    document.documentElement.dataset.theme = "dark";
+  }
+}
+
 function currentTheme() {
   return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
@@ -143,6 +154,7 @@ window.addEventListener("resize", () => {
   else syncSidebarState();
   syncImageZoomMode();
 });
+applyStoredTheme();
 syncSidebarState();
 syncThemeToggle();
 syncSettingsPanelState();
