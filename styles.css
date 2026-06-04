@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --bg: #0f1216;
   --panel: #151a21;
   --panel2: #10141a;
@@ -12,6 +13,51 @@
   --button-border: #30405a;
   --tree-base: #101722;
   --tree-selected: #172013;
+  --header-bg: #0d1014;
+  --input-bg: #0c1016;
+  --tree-hover: #122033;
+  --tree-depth-1: #121a26;
+  --tree-depth-2: #101a27;
+  --tree-depth-3: #0f1723;
+  --tree-depth-4: #0d1520;
+  --tree-depth-5: #0c131d;
+  --tree-depth-6: #0a111a;
+  --tree-drop: #14243a;
+  --media-bg: #070a0f;
+  --ghost-hover: rgba(77, 163, 255, 0.08);
+  --open-pill-text: rgba(232, 237, 244, 0.9);
+  --open-pill-bg: rgba(255,255,255,0.04);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f7fb;
+  --panel: #ffffff;
+  --panel2: #f8fafc;
+  --text: #17202d;
+  --muted: #5b6b7d;
+  --border: #d8e0ea;
+  --accent: #1769d1;
+  --clicked: #708a00;
+  --button-bg: #ffffff;
+  --button-hover: #eef5ff;
+  --button-border: #c6d2e1;
+  --tree-base: #ffffff;
+  --tree-selected: #f0f8d7;
+  --header-bg: #ffffff;
+  --input-bg: #ffffff;
+  --tree-hover: #eef5ff;
+  --tree-depth-1: #f9fbfd;
+  --tree-depth-2: #f5f8fc;
+  --tree-depth-3: #f1f5fa;
+  --tree-depth-4: #edf2f8;
+  --tree-depth-5: #e9eff6;
+  --tree-depth-6: #e4ebf4;
+  --tree-drop: #e8f2ff;
+  --media-bg: #eef2f7;
+  --ghost-hover: rgba(23, 105, 209, 0.08);
+  --open-pill-text: #2f3d4d;
+  --open-pill-bg: rgba(23, 105, 209, 0.08);
 }
 
 * {
@@ -45,7 +91,7 @@ body.lightbox-open {
   justify-content: space-between;
   padding: 14px 16px;
   border-bottom: 1px solid var(--border);
-  background: #0d1014;
+  background: var(--header-bg);
   gap: 12px;
 }
 
@@ -265,7 +311,7 @@ input[type="file"] {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: #0c1016;
+  background: var(--input-bg);
   color: var(--text);
   min-width: 0;
 }
@@ -295,7 +341,7 @@ button:disabled {
   opacity: 0.55;
 }
 button.ghost { background: transparent; }
-button.ghost:hover { background: rgba(77, 163, 255, 0.08); }
+button.ghost:hover { background: var(--ghost-hover); }
 button.danger:hover { border-color: #ff5a5a; }
 
 .status-banner {
@@ -422,7 +468,7 @@ button.danger:hover { border-color: #ff5a5a; }
 }
 .tree .tree-item:hover {
   border-color: var(--accent);
-  background: #122033;
+  background: var(--tree-hover);
 }
 
 .tree-item .left {
@@ -484,22 +530,22 @@ button.danger:hover { border-color: #ff5a5a; }
   background: var(--tree-selected);
 }
 .tree-item.depth-1 {
-  background: #121a26;
+  background: var(--tree-depth-1);
 }
 .tree-item.depth-2 {
-  background: #101a27;
+  background: var(--tree-depth-2);
 }
 .tree-item.depth-3 {
-  background: #0f1723;
+  background: var(--tree-depth-3);
 }
 .tree-item.depth-4 {
-  background: #0d1520;
+  background: var(--tree-depth-4);
 }
 .tree-item.depth-5 {
-  background: #0c131d;
+  background: var(--tree-depth-5);
 }
 .tree-item.depth-6 {
-  background: #0a111a;
+  background: var(--tree-depth-6);
 }
 .tree-item.dragging {
   opacity: 0.6;
@@ -526,7 +572,7 @@ button.danger:hover { border-color: #ff5a5a; }
   bottom: -5px;
 }
 .tree-item.drop-inside {
-  background: #14243a;
+  background: var(--tree-drop);
 }
 
 .selectedCategory {
@@ -539,8 +585,8 @@ button.danger:hover { border-color: #ff5a5a; }
   border: 1px solid #3a4b6b;
   padding: 2px 8px;
   border-radius: 999px;
-  color: rgba(232, 237, 244, 0.9);
-  background: rgba(255,255,255,0.04);
+  color: var(--open-pill-text);
+  background: var(--open-pill-bg);
   margin-left: 6px;
   white-space: nowrap;
 }
@@ -636,7 +682,7 @@ button.danger:hover { border-color: #ff5a5a; }
   height: auto;
   object-fit: cover;
   display: block;
-  background: #070a0f;
+  background: var(--media-bg);
 }
 
 @media (min-width: 981px) and (pointer: fine) {
@@ -744,6 +790,78 @@ button.danger:hover { border-color: #ff5a5a; }
   background: var(--button-hover);
 }
 
+.settings-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.settings-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 3px;
+  z-index: 90;
+  width: min(220px, calc(100vw - 24px));
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+.settings-panel[hidden] {
+  display: none;
+}
+
+.settings-title {
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.theme-options {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.theme-options legend {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel2);
+  color: var(--text);
+}
+
+.theme-option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
 .sidebar-header-actions {
   display: flex;
   align-items: center;
@@ -771,7 +889,6 @@ button.danger:hover { border-color: #ff5a5a; }
 
 @media (max-width: 980px) {
   .site-header {
-    flex-wrap: wrap;
     align-items: center;
   }
 
@@ -1025,9 +1142,34 @@ button.danger:hover { border-color: #ff5a5a; }
   .card video { aspect-ratio: 4 / 3; }
 }
 }
-@media (max-width: 420px) {
+
+
+@media (max-width: 440px) {
   .site-header {
     padding: 10px 12px;
+  }
+
+  .brand {
+    flex-basis: 160px;
+  }
+
+  .header-actions {
+    /* flex: 1 1 100%; */
+    justify-content: flex-end;
+  }
+
+  .settings-toggle {
+    min-width: 86px;
+  }
+
+  .settings-panel {
+    position: fixed;
+    top: 110px;
+    left: 15px;
+    right: 15px;
+    width: auto;
+    max-height: calc(100dvh - 74px);
+    overflow-y: auto;
   }
 
 
@@ -1051,10 +1193,14 @@ button.danger:hover { border-color: #ff5a5a; }
   }
 
   #sidebar {
-    margin-top: 4px;
+    margin-top: 50px;
   }
 }
-
+@media (min-width:346px){
+  .settings-panel {
+    top: 70px;
+  }
+}
 .lightbox {
   position: fixed;
   inset: 0;

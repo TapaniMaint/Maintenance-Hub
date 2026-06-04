@@ -5,6 +5,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Service Portal</title>
+  <script>
+    (() => {
+      try {
+        const stored = localStorage.getItem("maintenanceHubTheme_v1");
+        const prefersLight = window.matchMedia?.("(prefers-color-scheme: light)").matches;
+        document.documentElement.dataset.theme = stored || (prefersLight ? "light" : "dark");
+      } catch {
+        document.documentElement.dataset.theme = "dark";
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css" />
 </head>
 
@@ -15,6 +26,23 @@
       <span class="brand-title">Service Portal</span>
     </a>
     <nav class="header-actions" aria-label="Primary navigation">
+      <div class="settings-menu">
+        <button class="settings-toggle" id="settingsToggleBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
+        <div class="settings-panel" id="settingsPanel" role="dialog" aria-labelledby="settingsTitle" hidden>
+          <div class="settings-title" id="settingsTitle">Settings</div>
+          <fieldset class="theme-options">
+            <legend>Mode</legend>
+            <label class="theme-option">
+              <input type="radio" name="themeMode" value="dark" />
+              <span>Dark</span>
+            </label>
+            <label class="theme-option">
+              <input type="radio" name="themeMode" value="light" />
+              <span>Light</span>
+            </label>
+          </fieldset>
+        </div>
+      </div>
       <button class="iconbtn" id="treeToggleBtn" type="button" aria-controls="sidebar" aria-expanded="false">Menu</button>
     </nav>
   </header>

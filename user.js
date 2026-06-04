@@ -1,6 +1,7 @@
 import { loadData, findNode, syncFromRemote } from "./app.js";
 
 const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
+const THEME_KEY = "maintenanceHubTheme_v1";
 
 let data = loadData();
 let selectedId = data.root.children[0]?.id || "root";
@@ -19,8 +20,50 @@ const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 const sidebar = document.getElementById("sidebar");
 const collapseTreeBtn = document.getElementById("collapseTreeBtn");
+const settingsToggleBtn = document.getElementById("settingsToggleBtn");
+const settingsPanel = document.getElementById("settingsPanel");
+const themeModeInputs = [...document.querySelectorAll('input[name="themeMode"]')];
 const SIDEBAR_CLOSE_ANIMATION_MS = 220;
 let sidebarCloseTimer = 0;
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+}
+
+function syncThemeToggle() {
+  const theme = currentTheme();
+  themeModeInputs.forEach((input) => {
+    input.checked = input.value === theme;
+  });
+}
+
+function setTheme(theme) {
+  const nextTheme = theme === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = nextTheme;
+  localStorage.setItem(THEME_KEY, nextTheme);
+  syncThemeToggle();
+}
+
+function syncSettingsPanelState() {
+  settingsToggleBtn?.setAttribute("aria-expanded", String(!settingsPanel?.hidden));
+}
+
+function openSettingsPanel() {
+  if (!settingsPanel) return;
+  settingsPanel.hidden = false;
+  syncSettingsPanelState();
+}
+
+function closeSettingsPanel() {
+  if (!settingsPanel) return;
+  settingsPanel.hidden = true;
+  syncSettingsPanelState();
+}
+
+function toggleSettingsPanel() {
+  if (settingsPanel?.hidden) openSettingsPanel();
+  else closeSettingsPanel();
+}
 
 function isSidebarDrawer() {
   return window.innerWidth <= 980;
@@ -74,6 +117,19 @@ function toggleSidebar() {
 }
 
 treeToggleBtn?.addEventListener("click", toggleSidebar);
+settingsToggleBtn?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  toggleSettingsPanel();
+});
+settingsPanel?.addEventListener("click", (event) => {
+  event.stopPropagation();
+});
+themeModeInputs.forEach((input) => {
+  input.addEventListener("change", () => {
+    if (input.checked) setTheme(input.value);
+  });
+});
+document.addEventListener("click", closeSettingsPanel);
 overlay?.addEventListener("click", closeSidebar);
 sidebarCloseBtn?.addEventListener("click", closeSidebar);
 collapseTreeBtn?.addEventListener("click", () => {
@@ -88,6 +144,8 @@ window.addEventListener("resize", () => {
   syncImageZoomMode();
 });
 syncSidebarState();
+syncThemeToggle();
+syncSettingsPanelState();
 
 const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
@@ -194,6 +252,7 @@ lightboxCloseBtn?.addEventListener("click", (event) => {
   closeLightbox();
 });
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeSettingsPanel();
   if (event.key === "Escape" && lightbox?.classList.contains("open")) closeLightbox();
 });
 lightboxImg?.addEventListener("click", (event) => {
