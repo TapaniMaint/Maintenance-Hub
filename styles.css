@@ -171,7 +171,7 @@ body.lightbox-open {
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 12px;
 }
 
@@ -1019,7 +1019,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
   .panel {
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 14px;
   }
 
   .workspace-shell { flex-direction: column; }

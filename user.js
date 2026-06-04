@@ -512,6 +512,32 @@ function mediaTypeFor(item, src = "") {
   return "image";
 }
 
+function videoThumbnailSrc(src) {
+  if (/^(data:|blob:)/i.test(src)) return src;
+
+  try {
+    const parsed = new URL(src, window.location.href);
+    if (!parsed.hash) parsed.hash = "t=0.001";
+    return parsed.href;
+  } catch {
+    return src;
+  }
+}
+
+function prepareVideoThumbnail(video, src) {
+  video.src = videoThumbnailSrc(src);
+  video.controls = false;
+  video.muted = true;
+  video.defaultMuted = true;
+  video.loop = true;
+  video.autoplay = false;
+  video.playsInline = true;
+  video.setAttribute("playsinline", "");
+  video.setAttribute("webkit-playsinline", "");
+  video.preload = "metadata";
+  video.load();
+}
+
 function renderImagesOnly() {
   if (!elGallery) return;
 
@@ -537,17 +563,11 @@ function renderImagesOnly() {
     if (mediaType === "video") card.classList.add("card-video");
 
     const media = mediaType === "video" ? document.createElement("video") : document.createElement("img");
-    media.src = src;
     media.className = "media-lightbox-trigger";
     if (mediaType === "video") {
-      media.controls = false;
-      media.muted = true;
-      media.defaultMuted = true;
-      media.loop = true;
-      media.autoplay = false;
-      media.playsInline = true;
-      media.preload = "metadata";
+      prepareVideoThumbnail(media, src);
     } else {
+      media.src = src;
       media.alt = img.name || "image";
     }
     media.addEventListener("click", () => openLightbox(src, img.name || "", mediaType));
