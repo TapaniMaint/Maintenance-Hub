@@ -669,6 +669,7 @@ button.danger:hover { border-color: #ff5a5a; }
   color: var(--text);
   font: inherit;
   text-align: left;
+  -webkit-user-select: none;
   user-select: none;
 }
 .tree .tree-item:hover {

@@ -53,6 +53,11 @@ function syncThemeToggle() {
   });
 }
 
+function setAriaExpanded(element, isExpanded) {
+  if (!element) return;
+  element.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+}
+
 function setTheme(theme) {
   const nextTheme = theme === "light" ? "light" : "dark";
   document.documentElement.dataset.theme = nextTheme;
@@ -61,7 +66,7 @@ function setTheme(theme) {
 }
 
 function syncSettingsPanelState() {
-  settingsToggleBtn?.setAttribute("aria-expanded", String(!settingsPanel?.hidden));
+  setAriaExpanded(settingsToggleBtn, settingsPanel ? !settingsPanel.hidden : false);
 }
 
 function openSettingsPanel() {
@@ -95,7 +100,7 @@ function syncSidebarState() {
   const isClosing = document.body.classList.contains("sidebar-closing");
   const hideDrawerSidebar = !isOpen && isSidebarDrawer();
   if (hideDrawerSidebar) moveFocusOutOfHiddenSidebar();
-  treeToggleBtn?.setAttribute("aria-expanded", String(isOpen));
+  setAriaExpanded(treeToggleBtn, isOpen);
   sidebar?.setAttribute("aria-hidden", String(hideDrawerSidebar));
   sidebar?.toggleAttribute("inert", hideDrawerSidebar);
   if (overlay) overlay.hidden = !(isOpen || isClosing);
@@ -479,7 +484,7 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
   row.style.setProperty("--tree-depth", String(depth));
   row.dataset.depth = String(depth);
   row.setAttribute("aria-current", node.id === selectedId ? "true" : "false");
-  if (hasChildren) row.setAttribute("aria-expanded", String(isExpanded));
+  if (hasChildren) setAriaExpanded(row, isExpanded);
   if (depth > 0) row.classList.add(`depth-${Math.min(depth, 6)}`);
 
   const left = document.createElement("div");
@@ -576,8 +581,6 @@ function prepareVideoThumbnail(video, src) {
   video.loop = true;
   video.autoplay = false;
   video.playsInline = true;
-  video.setAttribute("playsinline", "");
-  video.setAttribute("webkit-playsinline", "");
   video.preload = "metadata";
   video.load();
 }

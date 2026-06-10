@@ -80,6 +80,11 @@ function syncThemeToggle() {
   });
 }
 
+function setAriaExpanded(element, isExpanded) {
+  if (!element) return;
+  element.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+}
+
 function setTheme(theme) {
   const nextTheme = theme === "light" ? "light" : "dark";
   document.documentElement.dataset.theme = nextTheme;
@@ -88,7 +93,7 @@ function setTheme(theme) {
 }
 
 function syncSettingsPanelState() {
-  settingsToggleBtn?.setAttribute("aria-expanded", String(!settingsPanel?.hidden));
+  setAriaExpanded(settingsToggleBtn, settingsPanel ? !settingsPanel.hidden : false);
 }
 
 function openSettingsPanel() {
@@ -115,7 +120,7 @@ function isSidebarDrawer() {
 function syncSidebarState() {
   const isOpen = document.body.classList.contains("sidebar-open");
   const isClosing = document.body.classList.contains("sidebar-closing");
-  treeToggleBtn?.setAttribute("aria-expanded", String(isOpen));
+  setAriaExpanded(treeToggleBtn, isOpen);
   sidebar?.setAttribute("aria-hidden", String(!isOpen && isSidebarDrawer()));
   if (overlay) overlay.hidden = !(isOpen || isClosing);
 }
@@ -456,8 +461,6 @@ function prepareVideoThumbnail(video, src) {
   video.loop = true;
   video.autoplay = false;
   video.playsInline = true;
-  video.setAttribute("playsinline", "");
-  video.setAttribute("webkit-playsinline", "");
   video.preload = "metadata";
   video.load();
 }
@@ -680,7 +683,7 @@ function renderNodeRow(node, depth) {
   row.draggable = true;
   row.dataset.depth = String(depth);
   row.setAttribute("aria-current", node.id === selectedId ? "true" : "false");
-  if (hasChildren) row.setAttribute("aria-expanded", String(isExpanded));
+  if (hasChildren) setAriaExpanded(row, isExpanded);
   if (depth > 0) row.classList.add(`depth-${Math.min(depth, 6)}`);
 
   const left = document.createElement("div");
