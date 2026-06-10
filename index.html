@@ -20,8 +20,14 @@
     </div>
     <nav class="header-actions" aria-label="Primary navigation">
       <div class="settings-menu">
-        <button class="settings-toggle" id="settingsToggleBtn" type="button" aria-haspopup="dialog"
-          aria-expanded="false" aria-controls="settingsPanel">Settings</button>
+        <button class="settings-toggle" id="settingsToggleBtn" type="button" aria-label="Settings"
+          aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel">
+          <svg class="setting-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.73l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.73v-.51a2 2 0 0 1 1-1.72l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
         <div class="settings-panel" id="settingsPanel" role="dialog" aria-labelledby="settingsTitle" hidden>
           <div class="settings-title" id="settingsTitle">Settings</div>
           <fieldset class="theme-options">
@@ -38,12 +44,12 @@
           <button class="header-button settings-sign-out" id="userSignOutBtn" type="button" hidden>Sign out</button>
         </div>
       </div>
-      <button class="iconbtn" id="treeToggleBtn" type="button" aria-controls="sidebar"
-        aria-expanded="false">Menu</button>
     </nav>
   </header>
 
   <div class="overlay" id="overlay" hidden></div>
+  <button class="iconbtn mobile-menu-toggle" id="treeToggleBtn" type="button" aria-controls="sidebar"
+    aria-expanded="false">Menu</button>
 
   <main class="main">
     <aside class="panel sidebar" id="sidebar" aria-labelledby="browseTitle">
@@ -53,8 +59,6 @@
         </div>
         <div class="sidebar-header-actions">
           <button class="sidebar-action-btn" id="collapseTreeBtn" type="button">Refresh</button>
-          <button class="iconbtn sidebar-close" id="sidebarCloseBtn" type="button"
-            aria-label="Close sidebar">Close</button>
         </div>
       </div>
       <label class="sidebar-search" for="categorySearch">

@@ -27,6 +27,7 @@
   --ghost-hover: rgba(77, 163, 255, 0.08);
   --open-pill-text: rgba(232, 237, 244, 0.9);
   --open-pill-bg: rgba(255,255,255,0.04);
+  --settings-icon: #ffffff;
 }
 
 :root[data-theme="light"] {
@@ -58,6 +59,7 @@
   --ghost-hover: rgba(23, 105, 209, 0.08);
   --open-pill-text: #2f3d4d;
   --open-pill-bg: rgba(23, 105, 209, 0.08);
+  --settings-icon: #17202d;
 }
 
 * {
@@ -1046,10 +1048,21 @@ button.danger:hover { border-color: #ff5a5a; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 92px;
-  padding: 8px 10px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
   border-radius: 10px;
-  white-space: nowrap;
+  color: var(--settings-icon);
+}
+
+.setting-icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .settings-panel {
@@ -1154,6 +1167,23 @@ button.danger:hover { border-color: #ff5a5a; }
   }
 
   .iconbtn { display: inline-flex; align-items: center; gap: 8px; }
+
+  #treeToggleBtn {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(22px, env(safe-area-inset-bottom));
+    z-index: 80;
+    min-width: 112px;
+    min-height: 52px;
+    justify-content: center;
+    border-radius: 999px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+  }
+
+  body.sidebar-open #treeToggleBtn {
+    border-color: var(--accent);
+    background: var(--button-hover);
+  }
 
   .main {
     padding: 10px;
@@ -1469,10 +1499,6 @@ button.danger:hover { border-color: #ff5a5a; }
   .header-actions {
     /* flex: 1 1 100%; */
     justify-content: flex-end;
-  }
-
-  .settings-toggle {
-    min-width: 86px;
   }
 
   .settings-panel {

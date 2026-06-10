@@ -21,7 +21,6 @@ function applyRemote(next) {
 const treeToggleBtn = document.getElementById("treeToggleBtn");
 const userSignOutBtn = document.getElementById("userSignOutBtn");
 const overlay = document.getElementById("overlay");
-const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 const sidebar = document.getElementById("sidebar");
 const collapseTreeBtn = document.getElementById("collapseTreeBtn");
 const homeBtn = document.getElementById("homeBtn");
@@ -103,6 +102,10 @@ function syncSidebarState() {
   const hideDrawerSidebar = !isOpen && isSidebarDrawer();
   if (hideDrawerSidebar) moveFocusOutOfHiddenSidebar();
   setAriaExpanded(treeToggleBtn, isOpen);
+  if (treeToggleBtn) {
+    treeToggleBtn.textContent = isOpen ? "Close" : "Menu";
+    treeToggleBtn.setAttribute("aria-label", isOpen ? "Close menu" : "Open menu");
+  }
   sidebar?.setAttribute("aria-hidden", String(hideDrawerSidebar));
   sidebar?.toggleAttribute("inert", hideDrawerSidebar);
   if (overlay) overlay.hidden = !(isOpen || isClosing);
@@ -187,7 +190,6 @@ themeModeInputs.forEach((input) => {
 });
 document.addEventListener("click", closeSettingsPanel);
 overlay?.addEventListener("click", closeSidebar);
-sidebarCloseBtn?.addEventListener("click", closeSidebar);
 collapseTreeBtn?.addEventListener("click", () => {
   expanded.clear();
   if (elCategorySearch) elCategorySearch.value = "";
