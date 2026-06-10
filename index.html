@@ -11,14 +11,18 @@
 
 <body class="user-page auth-checking">
   <header class="site-header">
-    <a class="brand" href="/" aria-label="Equipment Services home">
-      <img class="tapani-logo" src="images/logo.ico" alt="Tapani logo" />
-      <span class="brand-title">Service Portal</span>
-    </a>
+    <div class="header-left">
+      <a class="brand" href="/" aria-label="Equipment Services home">
+        <img class="tapani-logo" src="images/logo.ico" alt="Tapani logo" />
+        <span class="brand-title">Service Portal</span>
+      </a>
+      <a class="header-home-link" id="homeBtn" href="/">Home</a>
+    </div>
     <nav class="header-actions" aria-label="Primary navigation">
       <button class="header-button" id="userSignOutBtn" type="button" hidden>Sign out</button>
       <div class="settings-menu">
-        <button class="settings-toggle" id="settingsToggleBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
+        <button class="settings-toggle" id="settingsToggleBtn" type="button" aria-haspopup="dialog"
+          aria-expanded="false" aria-controls="settingsPanel">Settings</button>
         <div class="settings-panel" id="settingsPanel" role="dialog" aria-labelledby="settingsTitle" hidden>
           <div class="settings-title" id="settingsTitle">Settings</div>
           <fieldset class="theme-options">
@@ -34,7 +38,8 @@
           </fieldset>
         </div>
       </div>
-      <button class="iconbtn" id="treeToggleBtn" type="button" aria-controls="sidebar" aria-expanded="false">Menu</button>
+      <button class="iconbtn" id="treeToggleBtn" type="button" aria-controls="sidebar"
+        aria-expanded="false">Menu</button>
     </nav>
   </header>
 
@@ -48,7 +53,8 @@
         </div>
         <div class="sidebar-header-actions">
           <button class="sidebar-action-btn" id="collapseTreeBtn" type="button">Refresh</button>
-          <button class="iconbtn sidebar-close" id="sidebarCloseBtn" type="button" aria-label="Close sidebar">Close</button>
+          <button class="iconbtn sidebar-close" id="sidebarCloseBtn" type="button"
+            aria-label="Close sidebar">Close</button>
         </div>
       </div>
       <label class="sidebar-search" for="categorySearch">
@@ -60,6 +66,86 @@
 
     <section class="panel content" aria-labelledby="mediaTitle">
       <h2 class="panel-title panel-title-spaced" id="mediaTitle">Media</h2>
+      <section class="landing-hero" id="landingHero" aria-labelledby="landingTitle">
+        <img src="images/Columbia Palisades.jpg" alt="Columbia Palisades job site with excavation equipment" />
+        <div class="landing-copy">
+          <!-- <p class="landing-eyebrow">Maintenance Media</p> -->
+          <h1 id="landingTitle">Service Portal</h1>
+          <p>Equipment service guide</p>
+          <button class="landing-browse-btn" id="landingBrowseBtn" type="button">Start Browsing</button>
+        </div>
+      </section>
+      <section class="landing-future-space" id="landingFutureSpace" aria-label="Landing page content area">
+        <section class="landing-block" aria-labelledby="statsTitle">
+          <div class="landing-section-heading">
+            <h2 id="statsTitle">Operations Snapshot</h2>
+            <span>Placeholder data</span>
+          </div>
+          <div class="stats-grid">
+            <article class="stat-tile">
+              <span class="stat-label">Fuel pumped YTD</span>
+              <strong>482,300 gal</strong>
+              <span class="stat-note">Diesel, DEF, and lube tracking</span>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">PM services complete</span>
+              <strong>1,248</strong>
+              <span class="stat-note">Year to date</span>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">Open down units</span>
+              <strong>17</strong>
+              <span class="stat-note">Awaiting repair or parts</span>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">Work orders closed</span>
+              <strong>3,914</strong>
+              <span class="stat-note">Shop and field combined</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="landing-block" aria-labelledby="linksTitle">
+          <div class="landing-section-heading">
+            <h2 id="linksTitle">Tech Links</h2>
+            <span>Common portals</span>
+          </div>
+          <div class="tech-links-grid">
+            <a class="tech-link"
+              href="https://tapaniunderground0-my.sharepoint.com/:x:/r/personal/anatoliyb_tapani_com/_layouts/15/doc2.aspx?sourcedoc=%7BB6A27A8A-95D1-4E5F-80DC-62BF246289D8%7D&file=Maintenance%20Tech%20Schedule.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1&wdOrigin=OFFICECOM-WEB.REDIRECT%2CAPPHOME-WEB.JUMPBACKIN&wdPreviousSession=05777c33-eeaa-4026-a7a4-1c65d3d86b0b&wdPreviousSessionSrc=AppHomeWeb&ct=1771373166781"
+              target="_blank" rel="noopener noreferrer" aria-label="Open maintenance tech schedule">
+              <strong>Maintenance Tech Schedule</strong>
+              <span>Job schedules and assignments</span>
+            </a>
+            <a class="tech-link" href="https://telematics.hcssapps.com/App/Map" target="_blank"
+              rel="noopener noreferrer" aria-label="Open work order system">
+              <strong>HCSS Telematics</strong>
+              <span>Job location and equipment tracking</span>
+            </a>
+            <a class="tech-link" href="#" target="_blank" rel="noopener noreferrer" aria-label="Open fluid reference">
+              <strong>Apparel</strong>
+              <span>Apparel guidelines and reimbursement</span>
+            </a>
+            <a class="tech-link" href="https://chemmanagement.ehs.com/9/1d09b91a-a101-4360-b601-751eedaca277/ebinders"
+              target="_blank" rel="noopener noreferrer" aria-label="Open safety data sheets">
+              <strong>Safety Data Sheets</strong>
+              <span>SDS and chemical references</span>
+            </a>
+
+            <a class="tech-link"
+              href="https://tapaniunderground0.sharepoint.com/sites/TapaniIntranet/Intranet%20documents/Forms/AllItems.aspx?id=%2Fsites%2FTapaniIntranet%2FIntranet%20documents%2FBattle%20Ground%20Site%20Directory%2Epdf&parent=%2Fsites%2FTapaniIntranet%2FIntranet%20documents&p=true&ga=1"
+              target="_blank" rel="noopener noreferrer" aria-label="Open inspection forms">
+              <strong>Site Directory</strong>
+              <span>Battle Ground shop map</span>
+            </a>
+            <a class="tech-link" href="https://chemmanagement.ehs.com" target="_blank" rel="noopener noreferrer"
+              aria-label="Open OEM service portal">
+              <strong>Phone Directory List</strong>
+              <span>TU & TT Company Cell Phone List</span>
+            </a>
+          </div>
+        </section>
+      </section>
       <div class="gallery" id="gallery"></div>
       <p class="small" id="imgHint"></p>
     </section>
@@ -69,7 +155,7 @@
     <button class="lightbox-close" id="lightboxCloseBtn" type="button" aria-label="Close media preview">X</button>
     <div class="frame">
       <img id="lightboxImg" alt="" />
-      <video id="lightboxVideo" controls playsinline></video>
+      <video id="lightboxVideo" controls></video>
     </div>
     <p class="caption" id="lightboxCaption"></p>
   </div>

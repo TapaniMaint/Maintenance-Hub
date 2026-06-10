@@ -5,13 +5,15 @@ const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
 const THEME_KEY = "maintenanceHubTheme_v1";
 
 let data = loadData();
-let selectedId = data.root.children[0]?.id || "root";
+let selectedId = "";
 let expanded = loadExpanded();
+let hasBrowsedMedia = false;
 
 function applyRemote(next) {
   data = next;
   if (!findNode(data.root, selectedId)) {
-    selectedId = data.root.children[0]?.id || "root";
+    selectedId = "";
+    hasBrowsedMedia = false;
   }
   renderAll();
 }
@@ -22,11 +24,14 @@ const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 const sidebar = document.getElementById("sidebar");
 const collapseTreeBtn = document.getElementById("collapseTreeBtn");
+const homeBtn = document.getElementById("homeBtn");
 const settingsToggleBtn = document.getElementById("settingsToggleBtn");
 const settingsPanel = document.getElementById("settingsPanel");
 const themeModeInputs = [...document.querySelectorAll('input[name="themeMode"]')];
 const SIDEBAR_CLOSE_ANIMATION_MS = 220;
+const SIDEBAR_FLASH_MS = 900;
 let sidebarCloseTimer = 0;
+let sidebarFlashTimer = 0;
 
 function applyStoredTheme() {
   try {
@@ -50,6 +55,11 @@ function syncThemeToggle() {
   });
 }
 
+function setAriaExpanded(element, isExpanded) {
+  if (!element) return;
+  element.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+}
+
 function setTheme(theme) {
   const nextTheme = theme === "light" ? "light" : "dark";
   document.documentElement.dataset.theme = nextTheme;
@@ -58,7 +68,7 @@ function setTheme(theme) {
 }
 
 function syncSettingsPanelState() {
-  settingsToggleBtn?.setAttribute("aria-expanded", String(!settingsPanel?.hidden));
+  setAriaExpanded(settingsToggleBtn, settingsPanel ? !settingsPanel.hidden : false);
 }
 
 function openSettingsPanel() {
@@ -82,11 +92,19 @@ function isSidebarDrawer() {
   return window.innerWidth <= 980;
 }
 
+function moveFocusOutOfHiddenSidebar() {
+  if (!sidebar?.contains(document.activeElement)) return;
+  treeToggleBtn?.focus({ preventScroll: true });
+}
+
 function syncSidebarState() {
   const isOpen = document.body.classList.contains("sidebar-open");
   const isClosing = document.body.classList.contains("sidebar-closing");
-  treeToggleBtn?.setAttribute("aria-expanded", String(isOpen));
-  sidebar?.setAttribute("aria-hidden", String(!isOpen && isSidebarDrawer()));
+  const hideDrawerSidebar = !isOpen && isSidebarDrawer();
+  if (hideDrawerSidebar) moveFocusOutOfHiddenSidebar();
+  setAriaExpanded(treeToggleBtn, isOpen);
+  sidebar?.setAttribute("aria-hidden", String(hideDrawerSidebar));
+  sidebar?.toggleAttribute("inert", hideDrawerSidebar);
   if (overlay) overlay.hidden = !(isOpen || isClosing);
 }
 
@@ -129,6 +147,31 @@ function toggleSidebar() {
   else openSidebar();
 }
 
+function flashSidebar() {
+  if (!sidebar) return;
+  if (sidebarFlashTimer) window.clearTimeout(sidebarFlashTimer);
+  sidebar.classList.remove("sidebar-flash");
+  void sidebar.offsetWidth;
+  sidebar.classList.add("sidebar-flash");
+  sidebarFlashTimer = window.setTimeout(() => {
+    sidebar.classList.remove("sidebar-flash");
+    sidebarFlashTimer = 0;
+  }, SIDEBAR_FLASH_MS);
+}
+
+function showLandingPage() {
+  selectedId = "";
+  hasBrowsedMedia = false;
+  closeSidebar();
+  closeSettingsPanel();
+  renderAll();
+  document.querySelector(".content")?.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+homeBtn?.addEventListener("click", (event) => {
+  event.preventDefault();
+  showLandingPage();
+});
 treeToggleBtn?.addEventListener("click", toggleSidebar);
 settingsToggleBtn?.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -369,6 +412,10 @@ const elUpdatedAt = document.getElementById("updatedAt");
 const elGallery = document.getElementById("gallery");
 const elImgHint = document.getElementById("imgHint");
 const elCategorySearch = document.getElementById("categorySearch");
+const elLandingHero = document.getElementById("landingHero");
+const elLandingFutureSpace = document.getElementById("landingFutureSpace");
+const landingBrowseBtn = document.getElementById("landingBrowseBtn");
+const elMediaTitle = document.getElementById("mediaTitle");
 
 function loadExpanded() {
   try {
@@ -439,7 +486,7 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
   row.style.setProperty("--tree-depth", String(depth));
   row.dataset.depth = String(depth);
   row.setAttribute("aria-current", node.id === selectedId ? "true" : "false");
-  if (hasChildren) row.setAttribute("aria-expanded", String(isExpanded));
+  if (hasChildren) setAriaExpanded(row, isExpanded);
   if (depth > 0) row.classList.add(`depth-${Math.min(depth, 6)}`);
 
   const left = document.createElement("div");
@@ -468,6 +515,7 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
 
   row.addEventListener("click", () => {
     selectedId = node.id;
+    hasBrowsedMedia = true;
 
     if (hasChildren) {
       if (expanded.has(node.id)) expanded.delete(node.id);
@@ -476,6 +524,7 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
     }
 
     renderAll();
+    if (!hasChildren && isSidebarDrawer()) closeSidebar();
   });
 
   elTree.appendChild(row);
@@ -534,8 +583,6 @@ function prepareVideoThumbnail(video, src) {
   video.loop = true;
   video.autoplay = false;
   video.playsInline = true;
-  video.setAttribute("playsinline", "");
-  video.setAttribute("webkit-playsinline", "");
   video.preload = "metadata";
   video.load();
 }
@@ -544,7 +591,21 @@ function renderImagesOnly() {
   if (!elGallery) return;
 
   const found = findNode(data.root, selectedId);
-  if (!found) return;
+  const showLanding = !hasBrowsedMedia || !found;
+
+  if (elLandingHero) elLandingHero.hidden = !showLanding;
+  if (elLandingFutureSpace) elLandingFutureSpace.hidden = !showLanding;
+  elGallery.hidden = showLanding;
+  if (elImgHint) elImgHint.hidden = showLanding;
+  if (elMediaTitle) {
+    elMediaTitle.hidden = showLanding;
+    elMediaTitle.textContent = showLanding ? "" : found.node.name;
+  }
+  if (showLanding) {
+    elGallery.innerHTML = "";
+    if (elImgHint) elImgHint.textContent = "";
+    return;
+  }
 
   const node = found.node;
   const imgs = node.images || [];
@@ -611,6 +672,14 @@ function redirectToLogin() {
 }
 
 elCategorySearch?.addEventListener("input", renderSidebarTree);
+landingBrowseBtn?.addEventListener("click", () => {
+  if (isSidebarDrawer()) openSidebar();
+  window.setTimeout(() => {
+    flashSidebar();
+    elCategorySearch?.focus();
+    sidebar?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, 80);
+});
 
 userSignOutBtn?.addEventListener("click", async () => {
   userSignOutBtn.disabled = true;
