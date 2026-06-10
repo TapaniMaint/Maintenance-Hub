@@ -227,6 +227,24 @@ body.lightbox-open {
   border-radius: 10px;
 }
 
+.sidebar.sidebar-flash {
+  animation: sidebarFlash 900ms ease-out;
+}
+
+@keyframes sidebarFlash {
+  0%,
+  100% {
+    border-color: var(--border);
+    box-shadow: none;
+  }
+
+  18%,
+  58% {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.28), 0 0 28px rgba(77, 163, 255, 0.3);
+  }
+}
+
 .content {
   flex: 1 1 auto;
   justify-self: stretch;

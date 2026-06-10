@@ -27,7 +27,9 @@ const settingsToggleBtn = document.getElementById("settingsToggleBtn");
 const settingsPanel = document.getElementById("settingsPanel");
 const themeModeInputs = [...document.querySelectorAll('input[name="themeMode"]')];
 const SIDEBAR_CLOSE_ANIMATION_MS = 220;
+const SIDEBAR_FLASH_MS = 900;
 let sidebarCloseTimer = 0;
+let sidebarFlashTimer = 0;
 
 function applyStoredTheme() {
   try {
@@ -128,6 +130,18 @@ function closeSidebar() {
 function toggleSidebar() {
   if (document.body.classList.contains("sidebar-open")) closeSidebar();
   else openSidebar();
+}
+
+function flashSidebar() {
+  if (!sidebar) return;
+  if (sidebarFlashTimer) window.clearTimeout(sidebarFlashTimer);
+  sidebar.classList.remove("sidebar-flash");
+  void sidebar.offsetWidth;
+  sidebar.classList.add("sidebar-flash");
+  sidebarFlashTimer = window.setTimeout(() => {
+    sidebar.classList.remove("sidebar-flash");
+    sidebarFlashTimer = 0;
+  }, SIDEBAR_FLASH_MS);
 }
 
 function showLandingPage() {
@@ -646,6 +660,7 @@ elCategorySearch?.addEventListener("input", renderSidebarTree);
 landingBrowseBtn?.addEventListener("click", () => {
   if (isSidebarDrawer()) openSidebar();
   window.setTimeout(() => {
+    flashSidebar();
     elCategorySearch?.focus();
     sidebar?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, 80);
