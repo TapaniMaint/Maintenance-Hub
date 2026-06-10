@@ -4,13 +4,15 @@ const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
 const THEME_KEY = "maintenanceHubTheme_v1";
 
 let data = loadData();
-let selectedId = data.root.children[0]?.id || "root";
+let selectedId = "";
 let expanded = loadExpanded();
+let hasBrowsedMedia = false;
 
 function applyRemote(next) {
   data = next;
   if (!findNode(data.root, selectedId)) {
-    selectedId = data.root.children[0]?.id || "root";
+    selectedId = "";
+    hasBrowsedMedia = false;
   }
   renderAll();
 }
@@ -367,6 +369,9 @@ const elUpdatedAt = document.getElementById("updatedAt");
 const elGallery = document.getElementById("gallery");
 const elImgHint = document.getElementById("imgHint");
 const elCategorySearch = document.getElementById("categorySearch");
+const elLandingHero = document.getElementById("landingHero");
+const elLandingFutureSpace = document.getElementById("landingFutureSpace");
+const elMediaTitle = document.getElementById("mediaTitle");
 
 function loadExpanded() {
   try {
@@ -466,6 +471,7 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
 
   row.addEventListener("click", () => {
     selectedId = node.id;
+    hasBrowsedMedia = true;
 
     if (hasChildren) {
       if (expanded.has(node.id)) expanded.delete(node.id);
@@ -474,6 +480,7 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
     }
 
     renderAll();
+    if (!hasChildren && isSidebarDrawer()) closeSidebar();
   });
 
   elTree.appendChild(row);
@@ -542,7 +549,21 @@ function renderImagesOnly() {
   if (!elGallery) return;
 
   const found = findNode(data.root, selectedId);
-  if (!found) return;
+  const showLanding = !hasBrowsedMedia || !found;
+
+  if (elLandingHero) elLandingHero.hidden = !showLanding;
+  if (elLandingFutureSpace) elLandingFutureSpace.hidden = !showLanding;
+  elGallery.hidden = showLanding;
+  if (elImgHint) elImgHint.hidden = showLanding;
+  if (elMediaTitle) {
+    elMediaTitle.hidden = showLanding;
+    elMediaTitle.textContent = showLanding ? "" : found.node.name;
+  }
+  if (showLanding) {
+    elGallery.innerHTML = "";
+    if (elImgHint) elImgHint.textContent = "";
+    return;
+  }
 
   const node = found.node;
   const imgs = node.images || [];
