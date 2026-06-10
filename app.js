@@ -1,5 +1,5 @@
 import { SUPABASE_CONFIG } from "./supabase-config.js";
-import { requireAdminAccessToken, supabase } from "./supabase-client.js";
+import { getAccessToken, requireAdminAccessToken, supabase } from "./supabase-client.js";
 
 const STORE_KEY = "maintenanceHubData_v1";
 
@@ -96,6 +96,9 @@ async function apiHeaders({ admin = false, ...extra } = {}) {
 
   if (admin) {
     headers.Authorization = `Bearer ${await requireAdminAccessToken()}`;
+  } else {
+    const accessToken = await getAccessToken();
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   }
 
   return headers;

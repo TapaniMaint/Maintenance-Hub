@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login | Service Portal</title>
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="login-page">
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Equipment Services home">
+      <img class="tapani-logo" src="images/logo.ico" alt="Tapani logo" />
+      <span class="brand-title">Service Portal</span>
+    </a>
+    <nav class="header-actions" aria-label="Primary navigation">
+      <div class="settings-menu">
+        <button class="settings-toggle" id="settingsToggleBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
+        <div class="settings-panel" id="settingsPanel" role="dialog" aria-labelledby="settingsTitle" hidden>
+          <div class="settings-title" id="settingsTitle">Settings</div>
+          <fieldset class="theme-options">
+            <legend>Mode</legend>
+            <label class="theme-option">
+              <input type="radio" name="themeMode" value="dark" />
+              <span>Dark</span>
+            </label>
+            <label class="theme-option">
+              <input type="radio" name="themeMode" value="light" />
+              <span>Light</span>
+            </label>
+          </fieldset>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main class="login-main">
+    <section class="panel auth-shell login-shell" aria-labelledby="loginTitle">
+      <div class="auth-card">
+        <div class="auth-copy">
+          <h1 id="loginTitle">User Login</h1>
+          <p class="small">Sign in with your Service Portal account.</p>
+        </div>
+
+        <form class="auth-form" id="authForm">
+          <label class="sr-only" for="userEmail">Email</label>
+          <input id="userEmail" type="email" autocomplete="username" placeholder="Email" required />
+
+          <label class="sr-only" for="userPassword">Password</label>
+          <input id="userPassword" type="password" autocomplete="current-password" placeholder="Password" minlength="6" required />
+
+          <div class="row">
+            <button id="authSubmitBtn" type="submit">Sign in</button>
+          </div>
+        </form>
+
+        <p class="small" id="authSummary">Access requires a Supabase Auth account.</p>
+        <div class="status-banner" id="statusBanner" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="login.js"></script>
+</body>
+
+</html>

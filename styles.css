@@ -124,6 +124,16 @@ body.lightbox-open {
   justify-content: flex-end;
 }
 
+.header-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
 .site-header a {
   color: var(--text);
   text-decoration: none;
@@ -253,6 +263,17 @@ body.lightbox-open {
   height: fit-content;
 }
 
+.login-main {
+  min-height: calc(100dvh - 69px);
+  display: grid;
+  place-items: center;
+  padding: 12px;
+}
+
+.login-shell {
+  width: min(100%, 420px);
+}
+
 .auth-card {
   display: flex;
   flex-direction: column;
@@ -276,6 +297,10 @@ body.lightbox-open {
 
 .admin-page .auth-form > input {
   width: min(100%, 360px);
+}
+
+.auth-checking .main {
+  visibility: hidden;
 }
 
 .hidden {

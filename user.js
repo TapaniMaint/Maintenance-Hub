@@ -1,4 +1,5 @@
 import { loadData, findNode, syncFromRemote } from "./app.js";
+import { getUser, onAuthStateChange, signOut } from "./supabase-client.js";
 
 const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
 const THEME_KEY = "maintenanceHubTheme_v1";
@@ -16,6 +17,7 @@ function applyRemote(next) {
 }
 
 const treeToggleBtn = document.getElementById("treeToggleBtn");
+const userSignOutBtn = document.getElementById("userSignOutBtn");
 const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 const sidebar = document.getElementById("sidebar");
@@ -604,8 +606,43 @@ function renderAll() {
   renderImagesOnly();
 }
 
-syncFromRemote(applyRemote);
+function redirectToLogin() {
+  window.location.assign("/login.html");
+}
 
 elCategorySearch?.addEventListener("input", renderSidebarTree);
 
-renderAll();
+userSignOutBtn?.addEventListener("click", async () => {
+  userSignOutBtn.disabled = true;
+  try {
+    await signOut();
+    redirectToLogin();
+  } catch (error) {
+    console.warn("Unable to sign out.", error);
+    userSignOutBtn.disabled = false;
+  }
+});
+
+onAuthStateChange((session) => {
+  if (!session?.user) redirectToLogin();
+});
+
+async function startUserPortal() {
+  try {
+    const user = await getUser();
+    if (!user) {
+      redirectToLogin();
+      return;
+    }
+
+    if (userSignOutBtn) userSignOutBtn.hidden = false;
+    document.body.classList.remove("auth-checking");
+    renderAll();
+    await syncFromRemote(applyRemote);
+  } catch (error) {
+    console.warn("Unable to verify user session.", error);
+    redirectToLogin();
+  }
+}
+
+startUserPortal();

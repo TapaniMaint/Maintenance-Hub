@@ -9,13 +9,14 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 
-<body>
+<body class="user-page auth-checking">
   <header class="site-header">
     <a class="brand" href="/" aria-label="Equipment Services home">
       <img class="tapani-logo" src="images/logo.ico" alt="Tapani logo" />
       <span class="brand-title">Service Portal</span>
     </a>
     <nav class="header-actions" aria-label="Primary navigation">
+      <button class="header-button" id="userSignOutBtn" type="button" hidden>Sign out</button>
       <div class="settings-menu">
         <button class="settings-toggle" id="settingsToggleBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
         <div class="settings-panel" id="settingsPanel" role="dialog" aria-labelledby="settingsTitle" hidden>
