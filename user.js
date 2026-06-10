@@ -22,6 +22,7 @@ const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 const sidebar = document.getElementById("sidebar");
 const collapseTreeBtn = document.getElementById("collapseTreeBtn");
+const homeBtn = document.getElementById("homeBtn");
 const settingsToggleBtn = document.getElementById("settingsToggleBtn");
 const settingsPanel = document.getElementById("settingsPanel");
 const themeModeInputs = [...document.querySelectorAll('input[name="themeMode"]')];
@@ -129,6 +130,19 @@ function toggleSidebar() {
   else openSidebar();
 }
 
+function showLandingPage() {
+  selectedId = "";
+  hasBrowsedMedia = false;
+  closeSidebar();
+  closeSettingsPanel();
+  renderAll();
+  document.querySelector(".content")?.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+homeBtn?.addEventListener("click", (event) => {
+  event.preventDefault();
+  showLandingPage();
+});
 treeToggleBtn?.addEventListener("click", toggleSidebar);
 settingsToggleBtn?.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -371,6 +385,7 @@ const elImgHint = document.getElementById("imgHint");
 const elCategorySearch = document.getElementById("categorySearch");
 const elLandingHero = document.getElementById("landingHero");
 const elLandingFutureSpace = document.getElementById("landingFutureSpace");
+const landingBrowseBtn = document.getElementById("landingBrowseBtn");
 const elMediaTitle = document.getElementById("mediaTitle");
 
 function loadExpanded() {
@@ -628,5 +643,12 @@ function renderAll() {
 syncFromRemote(applyRemote);
 
 elCategorySearch?.addEventListener("input", renderSidebarTree);
+landingBrowseBtn?.addEventListener("click", () => {
+  if (isSidebarDrawer()) openSidebar();
+  window.setTimeout(() => {
+    elCategorySearch?.focus();
+    sidebar?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, 80);
+});
 
 renderAll();

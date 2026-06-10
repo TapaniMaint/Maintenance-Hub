@@ -11,10 +11,13 @@
 
 <body>
   <header class="site-header">
-    <a class="brand" href="/" aria-label="Equipment Services home">
-      <img class="tapani-logo" src="images/logo.ico" alt="Tapani logo" />
-      <span class="brand-title">Service Portal</span>
-    </a>
+    <div class="header-left">
+      <a class="brand" href="/" aria-label="Equipment Services home">
+        <img class="tapani-logo" src="images/logo.ico" alt="Tapani logo" />
+        <span class="brand-title">Service Portal</span>
+      </a>
+      <a class="header-home-link" id="homeBtn" href="/">Home</a>
+    </div>
     <nav class="header-actions" aria-label="Primary navigation">
       <div class="settings-menu">
         <button class="settings-toggle" id="settingsToggleBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
@@ -62,12 +65,75 @@
       <section class="landing-hero" id="landingHero" aria-labelledby="landingTitle">
         <img src="images/Columbia Palisades.jpg" alt="Columbia Palisades job site with excavation equipment" />
         <div class="landing-copy">
-          <p class="landing-eyebrow">Maintenance Media</p>
-          <h1 id="landingTitle">Columbia Palisades</h1>
-          <p>Equipment service media library</p>
+          <!-- <p class="landing-eyebrow">Maintenance Media</p> -->
+          <h1 id="landingTitle">Service Portal</h1>
+          <p>Equipment service guide</p>
+          <button class="landing-browse-btn" id="landingBrowseBtn" type="button">Start Browsing</button>
         </div>
       </section>
-      <section class="landing-future-space" id="landingFutureSpace" aria-label="Landing page content area"></section>
+      <section class="landing-future-space" id="landingFutureSpace" aria-label="Landing page content area">
+        <section class="landing-block" aria-labelledby="statsTitle">
+          <div class="landing-section-heading">
+            <h2 id="statsTitle">Operations Snapshot</h2>
+            <span>Placeholder data</span>
+          </div>
+          <div class="stats-grid">
+            <article class="stat-tile">
+              <span class="stat-label">Fuel pumped YTD</span>
+              <strong>482,300 gal</strong>
+              <span class="stat-note">Diesel, DEF, and lube tracking</span>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">PM services complete</span>
+              <strong>1,248</strong>
+              <span class="stat-note">Year to date</span>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">Open down units</span>
+              <strong>17</strong>
+              <span class="stat-note">Awaiting repair or parts</span>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">Work orders closed</span>
+              <strong>3,914</strong>
+              <span class="stat-note">Shop and field combined</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="landing-block" aria-labelledby="linksTitle">
+          <div class="landing-section-heading">
+            <h2 id="linksTitle">Tech Links</h2>
+            <span>Common portals</span>
+          </div>
+          <div class="tech-links-grid">
+            <a class="tech-link" href="#" aria-label="Open OEM service portal">
+              <strong>OEM Service Portal</strong>
+              <span>Manuals, fault codes, service docs</span>
+            </a>
+            <a class="tech-link" href="#" aria-label="Open parts lookup">
+              <strong>Parts Lookup</strong>
+              <span>Part numbers and availability</span>
+            </a>
+            <a class="tech-link" href="#" aria-label="Open fluid reference">
+              <strong>Fluid Reference</strong>
+              <span>Fuel, DEF, oil, coolant specs</span>
+            </a>
+            <a class="tech-link" href="#" aria-label="Open safety data sheets">
+              <strong>Safety Data Sheets</strong>
+              <span>SDS and chemical references</span>
+            </a>
+            <a class="tech-link" href="#" aria-label="Open work order system">
+              <strong>Work Orders</strong>
+              <span>Jobs, labor, and repair history</span>
+            </a>
+            <a class="tech-link" href="#" aria-label="Open inspection forms">
+              <strong>Inspection Forms</strong>
+              <span>DVIR, DOT, and PM checklists</span>
+            </a>
+          </div>
+        </section>
+      </section>
       <div class="gallery" id="gallery"></div>
       <p class="small" id="imgHint"></p>
     </section>
