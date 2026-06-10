@@ -85,11 +85,19 @@ function isSidebarDrawer() {
   return window.innerWidth <= 980;
 }
 
+function moveFocusOutOfHiddenSidebar() {
+  if (!sidebar?.contains(document.activeElement)) return;
+  treeToggleBtn?.focus({ preventScroll: true });
+}
+
 function syncSidebarState() {
   const isOpen = document.body.classList.contains("sidebar-open");
   const isClosing = document.body.classList.contains("sidebar-closing");
+  const hideDrawerSidebar = !isOpen && isSidebarDrawer();
+  if (hideDrawerSidebar) moveFocusOutOfHiddenSidebar();
   treeToggleBtn?.setAttribute("aria-expanded", String(isOpen));
-  sidebar?.setAttribute("aria-hidden", String(!isOpen && isSidebarDrawer()));
+  sidebar?.setAttribute("aria-hidden", String(hideDrawerSidebar));
+  sidebar?.toggleAttribute("inert", hideDrawerSidebar);
   if (overlay) overlay.hidden = !(isOpen || isClosing);
 }
 
