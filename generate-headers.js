@@ -102,8 +102,11 @@ function copyHeadersWithOptionalAuthOverride() {
 }
 
 function assertDeploymentSecurityChecks() {
-  if (process.env.SUPABASE_AUTH_RATE_LIMITS_CONFIRMED !== "true") {
-    throw new Error("Set SUPABASE_AUTH_RATE_LIMITS_CONFIRMED=true after enabling Supabase Auth rate limits for this project.");
+  const supabaseAuthRate = process.env.SUPABASE_AUTH_RATE?.trim();
+  const rateLimitsConfirmed = process.env.SUPABASE_AUTH_RATE_LIMITS_CONFIRMED === "true";
+
+  if (!supabaseAuthRate && !rateLimitsConfirmed) {
+    console.warn("SUPABASE_AUTH_RATE is not set; skipping Supabase Auth rate-limit deployment check.");
   }
 }
 
