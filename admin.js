@@ -1187,6 +1187,30 @@ document.getElementById("departmentSaveBtn")?.addEventListener("click", async ()
   await persistData();
 });
 
+document.getElementById("departmentSelectAllBtn")?.addEventListener("click", () => {
+  const department = currentDepartment();
+  if (!department || !elDepartmentCategoryList) return;
+
+  const count = elDepartmentCategoryList.querySelectorAll("input[type='checkbox']").length;
+  const message = `Select all ${count} categories for "${department.name}"? This may expose media from every shared category to this department.`;
+  if (!window.confirm(message)) return;
+
+  elDepartmentCategoryList
+    .querySelectorAll("input[type='checkbox']")
+    .forEach((input) => {
+      input.checked = true;
+    });
+});
+
+document.getElementById("departmentClearAllBtn")?.addEventListener("click", () => {
+  if (!elDepartmentCategoryList) return;
+  elDepartmentCategoryList
+    .querySelectorAll("input[type='checkbox']")
+    .forEach((input) => {
+      input.checked = false;
+    });
+});
+
 document.getElementById("addImgUrlBtn")?.addEventListener("click", async () => {
   const found = findNode(data.root, selectedId);
   if (!found) return;
