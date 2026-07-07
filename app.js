@@ -128,14 +128,27 @@ function defaultDepartments(root) {
   ];
 }
 
+function localDepartmentData() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+    return {
+      defaultDepartmentId: parsed.defaultDepartmentId,
+      departments: Array.isArray(parsed.departments) ? parsed.departments : []
+    };
+  } catch {
+    return { defaultDepartmentId: "", departments: [] };
+  }
+}
+
 export function ensureDepartments(data) {
   if (!data?.root) return data;
 
   const defaults = defaultDepartments(data.root);
   const byDefaultId = new Map(defaults.map((department) => [department.id, department]));
+  const localDepartments = localDepartmentData();
   const departments = Array.isArray(data.departments) && data.departments.length
     ? data.departments
-    : defaults;
+    : (localDepartments.departments.length ? localDepartments.departments : defaults);
 
   data.departments = departments.map((department) => {
     const fallback = byDefaultId.get(department.id) || defaults[0];
@@ -156,7 +169,9 @@ export function ensureDepartments(data) {
     }
   }
 
-  if (!data.defaultDepartmentId) data.defaultDepartmentId = DEFAULT_DEPARTMENT_ID;
+  if (!data.defaultDepartmentId) {
+    data.defaultDepartmentId = localDepartments.defaultDepartmentId || DEFAULT_DEPARTMENT_ID;
+  }
   return data;
 }
 

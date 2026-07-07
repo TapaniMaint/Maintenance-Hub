@@ -84,6 +84,42 @@
       </aside>
 
       <section class="panel content" aria-label="Category tools">
+        <article class="panel panel-subsection" aria-labelledby="departmentEditorTitle">
+          <h2 class="panel-title panel-title-spaced" id="departmentEditorTitle">Departments</h2>
+          <div class="department-admin">
+            <div class="row">
+              <label class="sr-only" for="departmentAdminSelect">Department</label>
+              <select id="departmentAdminSelect" aria-label="Department"></select>
+              <label class="sr-only" for="departmentNewName">New department name</label>
+              <input id="departmentNewName" type="text" placeholder="New department name" />
+              <button id="departmentAddBtn" type="button">Add department</button>
+            </div>
+            <div class="department-admin__fields">
+              <label>
+                <span>Name</span>
+                <input id="departmentNameInput" type="text" />
+              </label>
+              <label>
+                <span>Landing title</span>
+                <input id="departmentLandingTitleInput" type="text" />
+              </label>
+              <label>
+                <span>Landing subtitle</span>
+                <input id="departmentLandingSubtitleInput" type="text" />
+              </label>
+              <label>
+                <span>Landing image path</span>
+                <input id="departmentLandingImageInput" type="text" placeholder="images/Columbia Palisades.jpg" />
+              </label>
+            </div>
+            <div class="section-header department-admin__category-header">
+              <h3 class="panel-title">Visible Categories</h3>
+              <button id="departmentSaveBtn" type="button">Save department</button>
+            </div>
+            <div class="department-category-list" id="departmentCategoryList" aria-label="Department category assignment"></div>
+          </div>
+        </article>
+
         <article class="panel panel-subsection" aria-labelledby="addMasterTitle">
           <h2 class="panel-title panel-title-spaced" id="addMasterTitle">Add Master Category</h2>
           <div class="row">

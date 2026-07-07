@@ -1,4 +1,5 @@
 import {
+  DEFAULT_DEPARTMENT_ID,
   loadData,
   saveData,
   syncFromRemote,
@@ -37,6 +38,7 @@ const ALLOWED_MEDIA_HOST_SUFFIXES = [
 
 let data = loadData();
 let selectedId = data.root.children[0]?.id || "root";
+let selectedDepartmentId = data.defaultDepartmentId || DEFAULT_DEPARTMENT_ID;
 let expanded = loadExpanded();
 let adminEnabled = false;
 let selectedMediaKeys = new Set();
@@ -54,6 +56,7 @@ function applyRemote(next) {
   if (!findNode(data.root, selectedId)) {
     selectedId = data.root.children[0]?.id || "root";
   }
+  if (!currentDepartment()) selectedDepartmentId = data.defaultDepartmentId || DEFAULT_DEPARTMENT_ID;
   renderTree();
 }
 
@@ -529,6 +532,13 @@ function saveExpanded() {
 const elImgUrlInput = document.getElementById("imgUrlInput");
 const elImgUrlName = document.getElementById("imgUrlName");
 const elAddMasterInput = document.getElementById("addMasterInput");
+const elDepartmentSelect = document.getElementById("departmentAdminSelect");
+const elDepartmentNewName = document.getElementById("departmentNewName");
+const elDepartmentName = document.getElementById("departmentNameInput");
+const elDepartmentLandingTitle = document.getElementById("departmentLandingTitleInput");
+const elDepartmentLandingSubtitle = document.getElementById("departmentLandingSubtitleInput");
+const elDepartmentLandingImage = document.getElementById("departmentLandingImageInput");
+const elDepartmentCategoryList = document.getElementById("departmentCategoryList");
 const elTree = document.getElementById("tree");
 const elSelectedPath = document.getElementById("selectedPath");
 const elRenameInput = document.getElementById("renameInput");
@@ -616,6 +626,33 @@ function countMediaItems(node) {
   return count;
 }
 
+function descendantCategoryIds(node) {
+  const ids = [];
+
+  function visit(item) {
+    if (!item) return;
+    ids.push(item.id);
+    for (const child of item.children || []) visit(child);
+  }
+
+  visit(node);
+  return ids;
+}
+
+function assignCategoryToSelectedDepartment(categoryId) {
+  const department = currentDepartment();
+  if (!department || !categoryId) return;
+  department.categoryIds = department.categoryIds || [];
+  if (!department.categoryIds.includes(categoryId)) department.categoryIds.push(categoryId);
+}
+
+function removeCategoryRefs(categoryIds) {
+  const removed = new Set(categoryIds);
+  for (const department of data.departments || []) {
+    department.categoryIds = (department.categoryIds || []).filter((id) => !removed.has(id));
+  }
+}
+
 function confirmCategoryDelete(node) {
   const childCount = countDescendants(node);
   const mediaCount = countMediaItems(node);
@@ -688,11 +725,98 @@ function syncClearMediaButton() {
   elClearImagesBtn.textContent = count === 0 ? "Delete selected media" : `Delete selected media (${count})`;
 }
 
+function slugFromName(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    || `department-${Date.now().toString(36)}`;
+}
+
+function currentDepartment() {
+  return (data.departments || []).find((department) => department.id === selectedDepartmentId)
+    || (data.departments || []).find((department) => department.id === data.defaultDepartmentId)
+    || data.departments?.[0]
+    || null;
+}
+
+function categoryRows(root) {
+  const rows = [];
+
+  function visit(node, depth, path) {
+    for (const child of node.children || []) {
+      const nextPath = [...path, child.name];
+      rows.push({ node: child, depth, path: nextPath.join(" / ") });
+      visit(child, depth + 1, nextPath);
+    }
+  }
+
+  visit(root, 0, []);
+  return rows;
+}
+
+function renderDepartmentEditor() {
+  const departments = data.departments || [];
+  const department = currentDepartment();
+  if (!department) return;
+
+  if (elDepartmentSelect) {
+    elDepartmentSelect.innerHTML = "";
+    for (const item of departments) {
+      const option = document.createElement("option");
+      option.value = item.id;
+      option.textContent = item.name;
+      elDepartmentSelect.appendChild(option);
+    }
+    elDepartmentSelect.value = department.id;
+  }
+
+  if (elDepartmentName) elDepartmentName.value = department.name || "";
+  if (elDepartmentLandingTitle) elDepartmentLandingTitle.value = department.landing?.title || "";
+  if (elDepartmentLandingSubtitle) elDepartmentLandingSubtitle.value = department.landing?.subtitle || "";
+  if (elDepartmentLandingImage) elDepartmentLandingImage.value = department.landing?.heroImage || "";
+
+  if (!elDepartmentCategoryList) return;
+  elDepartmentCategoryList.innerHTML = "";
+  const assignedIds = new Set(department.categoryIds || []);
+
+  for (const { node, depth, path } of categoryRows(data.root)) {
+    const label = document.createElement("label");
+    label.className = "department-category-option";
+    label.style.setProperty("--tree-depth", String(depth));
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.value = node.id;
+    input.checked = assignedIds.has(node.id);
+
+    const text = document.createElement("span");
+    text.textContent = path;
+
+    label.appendChild(input);
+    label.appendChild(text);
+    elDepartmentCategoryList.appendChild(label);
+  }
+}
+
+function applyDepartmentForm(department) {
+  department.name = (elDepartmentName?.value || "").trim() || department.name;
+  department.landing = {
+    title: (elDepartmentLandingTitle?.value || "").trim() || department.name,
+    subtitle: (elDepartmentLandingSubtitle?.value || "").trim(),
+    heroImage: (elDepartmentLandingImage?.value || "").trim() || "images/Columbia Palisades.jpg"
+  };
+  department.categoryIds = Array.from(elDepartmentCategoryList?.querySelectorAll("input[type='checkbox']:checked") || [])
+    .map((input) => input.value);
+}
+
 function renderTree() {
   if (!adminEnabled) return;
 
   elTree.innerHTML = "";
   for (const child of data.root.children) renderNodeRow(child, 0);
+  renderDepartmentEditor();
   renderSelectedPanel();
 }
 
@@ -962,7 +1086,7 @@ async function persistData() {
     await saveData(data);
     data = loadData();
     renderTree();
-    setStatus("Changes saved to Supabase using the current admin session.", "success");
+    setStatus("Changes saved.", "success");
   } catch (error) {
     data = loadData();
     renderTree();
@@ -1023,6 +1147,46 @@ signOutBtn?.addEventListener("click", async () => {
   }
 });
 
+elDepartmentSelect?.addEventListener("change", () => {
+  selectedDepartmentId = elDepartmentSelect.value || data.defaultDepartmentId || DEFAULT_DEPARTMENT_ID;
+  renderDepartmentEditor();
+});
+
+document.getElementById("departmentAddBtn")?.addEventListener("click", async () => {
+  const name = (elDepartmentNewName?.value || "").trim();
+  if (!name) return;
+
+  const existingIds = new Set((data.departments || []).map((department) => department.id));
+  let id = slugFromName(name);
+  let suffix = 2;
+  while (existingIds.has(id)) {
+    id = `${slugFromName(name)}-${suffix}`;
+    suffix += 1;
+  }
+
+  data.departments = data.departments || [];
+  data.departments.push({
+    id,
+    name,
+    landing: {
+      title: name,
+      subtitle: "",
+      heroImage: "images/Columbia Palisades.jpg"
+    },
+    categoryIds: []
+  });
+  selectedDepartmentId = id;
+  if (elDepartmentNewName) elDepartmentNewName.value = "";
+  await persistData();
+});
+
+document.getElementById("departmentSaveBtn")?.addEventListener("click", async () => {
+  const department = currentDepartment();
+  if (!department) return;
+  applyDepartmentForm(department);
+  await persistData();
+});
+
 document.getElementById("addImgUrlBtn")?.addEventListener("click", async () => {
   const found = findNode(data.root, selectedId);
   if (!found) return;
@@ -1065,6 +1229,7 @@ document.getElementById("addMasterBtn")?.addEventListener("click", async () => {
 
   data.root.children.push(newNode);
   selectedId = newNode.id;
+  assignCategoryToSelectedDepartment(newNode.id);
   expanded.add(newNode.id);
   saveExpanded();
   if (elAddMasterInput) elAddMasterInput.value = "";
@@ -1091,12 +1256,14 @@ document.getElementById("addChildBtn")?.addEventListener("click", async () => {
   if (!name) return;
 
   found.node.children = found.node.children || [];
-  found.node.children.push({
+  const newNode = {
     id: `${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`,
     name,
     images: [],
     children: []
-  });
+  };
+  found.node.children.push(newNode);
+  assignCategoryToSelectedDepartment(newNode.id);
 
   expanded.add(found.node.id);
   saveExpanded();
@@ -1115,6 +1282,7 @@ document.getElementById("deleteBtn")?.addEventListener("click", async () => {
     if (!await confirmCategoryDelete(found.node)) return;
 
     removeNodeById(data.root, selectedId);
+    removeCategoryRefs(descendantCategoryIds(found.node));
     selectedId = data.root.children[0]?.id || "root";
     await persistData();
   } catch (error) {
