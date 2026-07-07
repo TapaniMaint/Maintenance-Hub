@@ -111,6 +111,21 @@ function moveFocusOutOfHiddenSidebar() {
 }
 
 function syncSidebarState() {
+  if (showingHomePage) {
+    document.body.classList.remove("sidebar-open", "sidebar-closing");
+    setAriaExpanded(treeToggleBtn, false);
+    if (treeToggleBtn) {
+      treeToggleBtn.hidden = true;
+      treeToggleBtn.textContent = "Menu";
+      treeToggleBtn.setAttribute("aria-label", "Open menu");
+    }
+    sidebar?.setAttribute("aria-hidden", "true");
+    sidebar?.toggleAttribute("inert", true);
+    if (overlay) overlay.hidden = true;
+    return;
+  }
+
+  if (treeToggleBtn) treeToggleBtn.hidden = false;
   const isOpen = document.body.classList.contains("sidebar-open");
   const isClosing = document.body.classList.contains("sidebar-closing");
   const hideDrawerSidebar = !isOpen && isSidebarDrawer();
@@ -758,6 +773,8 @@ function renderImagesOnly() {
   applyDepartmentLanding();
   renderHomePage();
 
+  document.body.classList.toggle("home-visible", showHome);
+  syncSidebarState();
   if (elHomePage) elHomePage.hidden = !showHome;
   if (elLandingHero) elLandingHero.hidden = !showLanding;
   if (elLandingFutureSpace) elLandingFutureSpace.hidden = !showLanding;

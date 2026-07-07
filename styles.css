@@ -262,6 +262,14 @@ body.lightbox-open {
   min-width: 0;
 }
 
+body.home-visible .portal-sidebar {
+  display: none;
+}
+
+body.home-visible .portal-content {
+  width: 100%;
+}
+
 .panel.content {
   height: calc(100dvh - 82px);
   min-height: 0;
