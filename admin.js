@@ -756,6 +756,38 @@ function categoryRows(root) {
   return rows;
 }
 
+function setDepartmentCategoryChecked(categoryId, checked) {
+  const found = findNode(data.root, categoryId);
+  if (!found || !elDepartmentCategoryList) return;
+
+  for (const id of descendantCategoryIds(found.node)) {
+    const input = elDepartmentCategoryList.querySelector(`input[value="${CSS.escape(id)}"]`);
+    if (input) input.checked = checked;
+  }
+}
+
+function syncDepartmentCategoryStates() {
+  if (!elDepartmentCategoryList) return;
+
+  for (const { node } of categoryRows(data.root).reverse()) {
+    const input = elDepartmentCategoryList.querySelector(`input[value="${CSS.escape(node.id)}"]`);
+    if (!input) continue;
+
+    const childIds = (node.children || []).flatMap((child) => descendantCategoryIds(child));
+    if (!childIds.length) {
+      input.indeterminate = false;
+      continue;
+    }
+
+    const childInputs = childIds
+      .map((id) => elDepartmentCategoryList.querySelector(`input[value="${CSS.escape(id)}"]`))
+      .filter(Boolean);
+    const checkedCount = childInputs.filter((childInput) => childInput.checked).length;
+    input.indeterminate = checkedCount > 0 && checkedCount < childInputs.length;
+    input.checked = checkedCount === childInputs.length;
+  }
+}
+
 function renderDepartmentEditor() {
   const departments = data.departments || [];
   const department = currentDepartment();
@@ -790,6 +822,10 @@ function renderDepartmentEditor() {
     input.type = "checkbox";
     input.value = node.id;
     input.checked = assignedIds.has(node.id);
+    input.addEventListener("change", () => {
+      if ((node.children || []).length) setDepartmentCategoryChecked(node.id, input.checked);
+      syncDepartmentCategoryStates();
+    });
 
     const text = document.createElement("span");
     text.textContent = path;
@@ -798,6 +834,8 @@ function renderDepartmentEditor() {
     label.appendChild(text);
     elDepartmentCategoryList.appendChild(label);
   }
+
+  syncDepartmentCategoryStates();
 }
 
 function applyDepartmentForm(department) {
