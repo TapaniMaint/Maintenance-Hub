@@ -7,10 +7,43 @@ const sourceHeadersFile = path.join(projectRoot, "_headers");
 const sourceRedirectsFile = path.join(projectRoot, "_redirects");
 const distHeadersFile = path.join(distDir, "_headers");
 const distRedirectsFile = path.join(distDir, "_redirects");
+const staticFiles = [
+  "admin.html",
+  "admin.js",
+  "app.js",
+  "index.html",
+  "login.html",
+  "login.js",
+  "styles.css",
+  "supabase-client.js",
+  "supabase-config.js",
+  "theme.js",
+  "user.js"
+];
+const staticDirs = [
+  "images",
+  "public"
+];
 
 function ensureDist() {
   if (!fs.existsSync(distDir)) {
     fs.mkdirSync(distDir, { recursive: true });
+  }
+}
+
+function copyStaticSite() {
+  for (const file of staticFiles) {
+    const source = path.join(projectRoot, file);
+    if (fs.existsSync(source)) {
+      fs.copyFileSync(source, path.join(distDir, file));
+    }
+  }
+
+  for (const dir of staticDirs) {
+    const source = path.join(projectRoot, dir);
+    if (fs.existsSync(source)) {
+      fs.cpSync(source, path.join(distDir, dir), { recursive: true });
+    }
   }
 }
 
@@ -35,7 +68,7 @@ function copyHeadersWithOptionalAuthOverride() {
 
   if (basicAuthCredentials) {
     headersContent = headersContent.replace(
-      /Basic-Auth:\s*CHANGE_ME_ADMIN:CHANGE_ME_PASSWORD/g,
+      /Basic-Auth:\s*__BASIC_AUTH_CREDENTIALS__/g,
       `Basic-Auth: ${basicAuthCredentials}`
     );
     console.log("Applied BASIC_AUTH_CREDENTIALS override in _headers.");
@@ -48,5 +81,6 @@ function copyHeadersWithOptionalAuthOverride() {
 }
 
 ensureDist();
+copyStaticSite();
 copyRedirects();
 copyHeadersWithOptionalAuthOverride();

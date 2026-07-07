@@ -41,6 +41,27 @@ create index if not exists media_category_sort_idx
 create schema if not exists private;
 revoke all on schema private from public;
 
+create or replace function private.has_app_role(required_roles text[])
+returns boolean
+language sql
+stable
+set search_path = ''
+as $$
+  select
+    coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = any(required_roles)
+    or (
+      jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'roles') = 'array'
+      and exists (
+        select 1
+        from jsonb_array_elements_text(auth.jwt() -> 'app_metadata' -> 'roles') as role_name(value)
+        where role_name.value = any(required_roles)
+      )
+    );
+$$;
+
+grant usage on schema private to authenticated;
+grant execute on function private.has_app_role(text[]) to authenticated;
+
 alter table public.categories enable row level security;
 alter table public.media enable row level security;
 
@@ -62,52 +83,28 @@ drop policy if exists "Authenticated read categories" on public.categories;
 create policy "Authenticated read categories"
   on public.categories for select
   to authenticated
-  using (true);
+  using (private.has_app_role(array['admin', 'technician', 'portal_user']));
 
 drop policy if exists "Admin write categories" on public.categories;
 create policy "Admin write categories"
   on public.categories for all
   to authenticated
-  using (
-    coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin'
-    or (
-      jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'roles') = 'array'
-      and (auth.jwt() -> 'app_metadata' -> 'roles') ? 'admin'
-    )
-  )
-  with check (
-    coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin'
-    or (
-      jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'roles') = 'array'
-      and (auth.jwt() -> 'app_metadata' -> 'roles') ? 'admin'
-    )
-  );
+  using (private.has_app_role(array['admin']))
+  with check (private.has_app_role(array['admin']));
 
 drop policy if exists "Public read media" on public.media;
 drop policy if exists "Authenticated read media" on public.media;
 create policy "Authenticated read media"
   on public.media for select
   to authenticated
-  using (true);
+  using (private.has_app_role(array['admin', 'technician', 'portal_user']));
 
 drop policy if exists "Admin write media" on public.media;
 create policy "Admin write media"
   on public.media for all
   to authenticated
-  using (
-    coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin'
-    or (
-      jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'roles') = 'array'
-      and (auth.jwt() -> 'app_metadata' -> 'roles') ? 'admin'
-    )
-  )
-  with check (
-    coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin'
-    or (
-      jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'roles') = 'array'
-      and (auth.jwt() -> 'app_metadata' -> 'roles') ? 'admin'
-    )
-  );
+  using (private.has_app_role(array['admin']))
+  with check (private.has_app_role(array['admin']));
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
@@ -137,7 +134,10 @@ drop policy if exists "Authenticated read maintenance media files" on storage.ob
 create policy "Authenticated read maintenance media files"
   on storage.objects for select
   to authenticated
-  using (bucket_id = 'maintenance-media');
+  using (
+    bucket_id = 'maintenance-media'
+    and private.has_app_role(array['admin', 'technician', 'portal_user'])
+  );
 
 drop policy if exists "Admin insert maintenance media files" on storage.objects;
 create policy "Admin insert maintenance media files"
@@ -145,13 +145,7 @@ create policy "Admin insert maintenance media files"
   to authenticated
   with check (
     bucket_id = 'maintenance-media'
-    and (
-      coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin'
-      or (
-        jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'roles') = 'array'
-        and (auth.jwt() -> 'app_metadata' -> 'roles') ? 'admin'
-      )
-    )
+    and private.has_app_role(array['admin'])
   );
 
 drop policy if exists "Admin update maintenance media files" on storage.objects;
@@ -160,23 +154,11 @@ create policy "Admin update maintenance media files"
   to authenticated
   using (
     bucket_id = 'maintenance-media'
-    and (
-      coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin'
-      or (
-        jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'roles') = 'array'
-        and (auth.jwt() -> 'app_metadata' -> 'roles') ? 'admin'
-      )
-    )
+    and private.has_app_role(array['admin'])
   )
   with check (
     bucket_id = 'maintenance-media'
-    and (
-      coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin'
-      or (
-        jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'roles') = 'array'
-        and (auth.jwt() -> 'app_metadata' -> 'roles') ? 'admin'
-      )
-    )
+    and private.has_app_role(array['admin'])
   );
 
 drop policy if exists "Admin delete maintenance media files" on storage.objects;
@@ -185,13 +167,7 @@ create policy "Admin delete maintenance media files"
   to authenticated
   using (
     bucket_id = 'maintenance-media'
-    and (
-      coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin'
-      or (
-        jsonb_typeof(auth.jwt() -> 'app_metadata' -> 'roles') = 'array'
-        and (auth.jwt() -> 'app_metadata' -> 'roles') ? 'admin'
-      )
-    )
+    and private.has_app_role(array['admin'])
   );
 
 create or replace function private.delete_media_row_for_storage_object()
@@ -229,3 +205,8 @@ where media.storage_path is not null
 -- update auth.users
 -- set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb
 -- where email = 'admin@example.com';
+--
+-- Example: mark a user as a read-only portal user.
+-- update auth.users
+-- set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"portal_user"}'::jsonb
+-- where email = 'user@example.com';

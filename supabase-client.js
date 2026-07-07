@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.106.2/+esm";
 import { SUPABASE_CONFIG } from "./supabase-config.js";
 
 const AUTH_THROTTLE_KEY = "maintenanceHubAuthThrottle_v1";
