@@ -19,6 +19,7 @@ import {
 
 const EXPANDED_KEY_ADMIN = "maintenanceHubExpanded_admin_v1";
 const THEME_KEY = "maintenanceHubTheme_v1";
+const THEMES = new Set(["dark", "light", "forest", "steel"]);
 const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
 const MAX_VIDEO_UPLOAD_BYTES = 50 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
@@ -75,7 +76,7 @@ let sidebarCloseTimer = 0;
 function applyStoredTheme() {
   try {
     const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "light" || stored === "dark") {
+    if (THEMES.has(stored)) {
       document.documentElement.dataset.theme = stored;
     }
   } catch {
@@ -84,7 +85,8 @@ function applyStoredTheme() {
 }
 
 function currentTheme() {
-  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  const theme = document.documentElement.dataset.theme;
+  return THEMES.has(theme) ? theme : "dark";
 }
 
 function syncThemeToggle() {
@@ -100,7 +102,7 @@ function setAriaExpanded(element, isExpanded) {
 }
 
 function setTheme(theme) {
-  const nextTheme = theme === "light" ? "light" : "dark";
+  const nextTheme = THEMES.has(theme) ? theme : "dark";
   document.documentElement.dataset.theme = nextTheme;
   localStorage.setItem(THEME_KEY, nextTheme);
   syncThemeToggle();

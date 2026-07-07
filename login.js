@@ -5,6 +5,7 @@ import {
 } from "./supabase-client.js";
 
 const THEME_KEY = "maintenanceHubTheme_v1";
+const THEMES = new Set(["dark", "light", "forest", "steel"]);
 
 const authForm = document.getElementById("authForm");
 const emailInput = document.getElementById("userEmail");
@@ -18,7 +19,7 @@ const themeModeInputs = [...document.querySelectorAll('input[name="themeMode"]')
 function applyStoredTheme() {
   try {
     const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "light" || stored === "dark") {
+    if (THEMES.has(stored)) {
       document.documentElement.dataset.theme = stored;
     }
   } catch {
@@ -27,7 +28,8 @@ function applyStoredTheme() {
 }
 
 function currentTheme() {
-  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  const theme = document.documentElement.dataset.theme;
+  return THEMES.has(theme) ? theme : "dark";
 }
 
 function syncThemeToggle() {
@@ -38,7 +40,7 @@ function syncThemeToggle() {
 }
 
 function setTheme(theme) {
-  const nextTheme = theme === "light" ? "light" : "dark";
+  const nextTheme = THEMES.has(theme) ? theme : "dark";
   document.documentElement.dataset.theme = nextTheme;
   localStorage.setItem(THEME_KEY, nextTheme);
   syncThemeToggle();
