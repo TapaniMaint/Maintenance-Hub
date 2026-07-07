@@ -3,6 +3,7 @@ import { getAccessToken, requireAdminAccessToken, supabase } from "./supabase-cl
 
 const STORE_KEY = "maintenanceHubData_v1";
 const SIGNED_MEDIA_URL_TTL_SECONDS = 60 * 60;
+export const DEFAULT_DEPARTMENT_ID = "mechanics";
 
 export function remoteEnabled() {
   return !!(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey);
@@ -13,7 +14,7 @@ function uid() {
 }
 
 function defaultData() {
-  return {
+  return ensureDepartments({
     version: 2,
     updatedAt: new Date().toISOString(),
     root: {
@@ -82,7 +83,81 @@ function defaultData() {
         }
       ]
     }
-  };
+  });
+}
+
+function categoryIds(root) {
+  const ids = [];
+
+  function visit(node) {
+    if (!node || node.id === "root") {
+      (node?.children || []).forEach(visit);
+      return;
+    }
+
+    ids.push(node.id);
+    (node.children || []).forEach(visit);
+  }
+
+  visit(root);
+  return ids;
+}
+
+function defaultDepartments(root) {
+  return [
+    {
+      id: DEFAULT_DEPARTMENT_ID,
+      name: "Mechanics",
+      landing: {
+        title: "Mechanics",
+        subtitle: "Service guides, repair media, and PM references.",
+        heroImage: "images/Columbia Palisades.jpg"
+      },
+      categoryIds: categoryIds(root)
+    },
+    {
+      id: "crew-truck",
+      name: "Crew Truck",
+      landing: {
+        title: "Crew Truck",
+        subtitle: "Truck setup, daily checks, and field references.",
+        heroImage: "images/Columbia Palisades.jpg"
+      },
+      categoryIds: []
+    }
+  ];
+}
+
+export function ensureDepartments(data) {
+  if (!data?.root) return data;
+
+  const defaults = defaultDepartments(data.root);
+  const byDefaultId = new Map(defaults.map((department) => [department.id, department]));
+  const departments = Array.isArray(data.departments) && data.departments.length
+    ? data.departments
+    : defaults;
+
+  data.departments = departments.map((department) => {
+    const fallback = byDefaultId.get(department.id) || defaults[0];
+    return {
+      id: department.id || fallback.id,
+      name: department.name || fallback.name,
+      landing: {
+        ...fallback.landing,
+        ...(department.landing || {})
+      },
+      categoryIds: Array.isArray(department.categoryIds) ? department.categoryIds : []
+    };
+  });
+
+  for (const fallback of defaults) {
+    if (!data.departments.some((department) => department.id === fallback.id)) {
+      data.departments.push(fallback);
+    }
+  }
+
+  if (!data.defaultDepartmentId) data.defaultDepartmentId = DEFAULT_DEPARTMENT_ID;
+  return data;
 }
 
 function setLocalDataRaw(data) {
@@ -297,7 +372,7 @@ async function buildTree(categories, media) {
     if (parent) parent.children.push(node);
   }
 
-  return { version: 2, updatedAt: new Date().toISOString(), root };
+  return ensureDepartments({ version: 2, updatedAt: new Date().toISOString(), root });
 }
 
 export function loadData() {
@@ -310,7 +385,9 @@ export function loadData() {
     }
     const parsed = JSON.parse(raw);
     if (!parsed || !parsed.root) throw new Error("Bad data");
-    return parsed;
+    const next = ensureDepartments(parsed);
+    localStorage.setItem(STORE_KEY, JSON.stringify(next));
+    return next;
   } catch {
     const seed = defaultData();
     localStorage.setItem(STORE_KEY, JSON.stringify(seed));
@@ -319,6 +396,7 @@ export function loadData() {
 }
 
 export async function saveData(data) {
+  ensureDepartments(data);
   data.updatedAt = new Date().toISOString();
   const previousRaw = localStorage.getItem(STORE_KEY);
   const nextRaw = JSON.stringify(data);

@@ -1,8 +1,9 @@
-import { loadData, findNode, syncFromRemote } from "./app.js";
+import { DEFAULT_DEPARTMENT_ID, loadData, findNode, syncFromRemote } from "./app.js";
 import { getUser, onAuthStateChange, signOut } from "./supabase-client.js";
 
 const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
 const THEME_KEY = "maintenanceHubTheme_v1";
+const DEPARTMENT_KEY = "maintenanceHubDepartment_user_v1";
 const ALLOWED_MEDIA_HOSTS = new Set([
   "zaxjhojgxwbldnwempzl.supabase.co",
   "1drv.ms"
@@ -15,13 +16,15 @@ const ALLOWED_MEDIA_HOST_SUFFIXES = [
 ];
 
 let data = loadData();
+let activeDepartmentId = readDepartmentId();
 let selectedId = "";
 let expanded = loadExpanded();
 let hasBrowsedMedia = false;
 
 function applyRemote(next) {
   data = next;
-  if (!findNode(data.root, selectedId)) {
+  if (!activeDepartment()) activeDepartmentId = data.defaultDepartmentId || DEFAULT_DEPARTMENT_ID;
+  if (!isCategoryVisible(selectedId)) {
     selectedId = "";
     hasBrowsedMedia = false;
   }
@@ -433,6 +436,92 @@ const elLandingHero = document.getElementById("landingHero");
 const elLandingFutureSpace = document.getElementById("landingFutureSpace");
 const landingBrowseBtn = document.getElementById("landingBrowseBtn");
 const elMediaTitle = document.getElementById("mediaTitle");
+const departmentSelect = document.getElementById("departmentSelect");
+
+function readDepartmentId() {
+  const param = new URLSearchParams(window.location.search).get("department");
+  if (param) return param;
+
+  try {
+    return localStorage.getItem(DEPARTMENT_KEY) || DEFAULT_DEPARTMENT_ID;
+  } catch {
+    return DEFAULT_DEPARTMENT_ID;
+  }
+}
+
+function saveDepartmentId(id) {
+  try {
+    localStorage.setItem(DEPARTMENT_KEY, id);
+  } catch {
+  }
+}
+
+function activeDepartment() {
+  return (data.departments || []).find((department) => department.id === activeDepartmentId)
+    || (data.departments || []).find((department) => department.id === data.defaultDepartmentId)
+    || data.departments?.[0]
+    || null;
+}
+
+function departmentCategoryIds() {
+  return new Set(activeDepartment()?.categoryIds || []);
+}
+
+function hasVisibleDescendant(node, visibleIds) {
+  return (node.children || []).some((child) => visibleIds.has(child.id) || hasVisibleDescendant(child, visibleIds));
+}
+
+function isCategoryVisible(id) {
+  if (!id) return true;
+  return departmentCategoryIds().has(id);
+}
+
+function shouldRenderNode(node, visibleIds) {
+  return visibleIds.has(node.id) || hasVisibleDescendant(node, visibleIds);
+}
+
+function renderDepartmentPicker() {
+  if (!departmentSelect) return;
+
+  const departments = data.departments || [];
+  departmentSelect.innerHTML = "";
+  for (const department of departments) {
+    const option = document.createElement("option");
+    option.value = department.id;
+    option.textContent = department.name;
+    departmentSelect.appendChild(option);
+  }
+
+  if (!departments.some((department) => department.id === activeDepartmentId)) {
+    activeDepartmentId = data.defaultDepartmentId || departments[0]?.id || DEFAULT_DEPARTMENT_ID;
+  }
+
+  departmentSelect.value = activeDepartmentId;
+}
+
+function syncDepartmentUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("department", activeDepartmentId);
+  window.history.replaceState({}, "", url);
+}
+
+function applyDepartmentLanding() {
+  const department = activeDepartment();
+  const landing = department?.landing || {};
+  const title = landing.title || department?.name || "Service Portal";
+  const subtitle = landing.subtitle || "Equipment service guide";
+  const heroImage = landing.heroImage || "images/Columbia Palisades.jpg";
+  const titleEl = document.getElementById("landingTitle");
+  const subtitleEl = elLandingHero?.querySelector(".hero__content p");
+  const imageEl = elLandingHero?.querySelector(".hero__image");
+
+  if (titleEl) titleEl.textContent = title;
+  if (subtitleEl) subtitleEl.textContent = subtitle;
+  if (imageEl) {
+    imageEl.src = heroImage;
+    imageEl.alt = `${title} landing image`;
+  }
+}
 
 function loadExpanded() {
   try {
@@ -475,11 +564,13 @@ function renderSidebarTree() {
   fmtUpdated();
 
   const searchQuery = normalizeSearch(elCategorySearch?.value);
+  const visibleIds = departmentCategoryIds();
   let visibleCount = 0;
   for (const child of data.root.children) {
+    if (!shouldRenderNode(child, visibleIds)) continue;
     if (!nodeMatchesSearch(child, searchQuery)) continue;
     visibleCount += 1;
-    renderNodeRow(child, 0, searchQuery);
+    renderNodeRow(child, 0, searchQuery, false, visibleIds);
   }
 
   if (searchQuery && visibleCount === 0) {
@@ -487,10 +578,15 @@ function renderSidebarTree() {
     empty.className = "tree-empty category-tree__empty";
     empty.textContent = "No matching categories.";
     elTree.appendChild(empty);
+  } else if (!searchQuery && visibleCount === 0) {
+    const empty = document.createElement("div");
+    empty.className = "tree-empty category-tree__empty";
+    empty.textContent = "No categories assigned to this department.";
+    elTree.appendChild(empty);
   }
 }
 
-function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = false) {
+function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = false, visibleIds = departmentCategoryIds()) {
   const row = document.createElement("button");
   const hasChildren = (node.children || []).length > 0;
   const directSearchMatch = searchQuery && nodeNameMatchesSearch(node, searchQuery);
@@ -505,6 +601,9 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
   row.setAttribute("aria-current", node.id === selectedId ? "true" : "false");
   if (hasChildren) setAriaExpanded(row, isExpanded);
   if (depth > 0) row.classList.add(`depth-${Math.min(depth, 6)}`, `category-tree__item--depth-${Math.min(depth, 6)}`);
+  if (!visibleIds.has(node.id)) {
+    row.classList.add("category-tree__item--ancestor-only");
+  }
 
   const left = document.createElement("div");
   left.className = "left category-tree__item-content";
@@ -531,8 +630,10 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
   row.appendChild(spacer);
 
   row.addEventListener("click", () => {
-    selectedId = node.id;
-    hasBrowsedMedia = true;
+    if (visibleIds.has(node.id)) {
+      selectedId = node.id;
+      hasBrowsedMedia = true;
+    }
 
     if (hasChildren) {
       if (expanded.has(node.id)) expanded.delete(node.id);
@@ -541,15 +642,16 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
     }
 
     renderAll();
-    if (!hasChildren && isSidebarDrawer()) closeSidebar();
+    if (visibleIds.has(node.id) && !hasChildren && isSidebarDrawer()) closeSidebar();
   });
 
   elTree.appendChild(row);
 
   if (hasChildren && isExpanded) {
     for (const child of node.children) {
+      if (!shouldRenderNode(child, visibleIds)) continue;
       if (searchQuery && !shouldRevealSearchSubtree && !nodeMatchesSearch(child, searchQuery)) continue;
-      renderNodeRow(child, depth + 1, searchQuery, shouldRevealSearchSubtree);
+      renderNodeRow(child, depth + 1, searchQuery, shouldRevealSearchSubtree, visibleIds);
     }
   }
 }
@@ -608,7 +710,8 @@ function renderImagesOnly() {
   if (!elGallery) return;
 
   const found = findNode(data.root, selectedId);
-  const showLanding = !hasBrowsedMedia || !found;
+  const showLanding = !hasBrowsedMedia || !found || !isCategoryVisible(selectedId);
+  applyDepartmentLanding();
 
   if (elLandingHero) elLandingHero.hidden = !showLanding;
   if (elLandingFutureSpace) elLandingFutureSpace.hidden = !showLanding;
@@ -680,6 +783,7 @@ function renderImagesOnly() {
 
 function renderAll() {
   data = loadData();
+  renderDepartmentPicker();
   renderSidebarTree();
   renderImagesOnly();
 }
@@ -689,6 +793,15 @@ function redirectToLogin() {
 }
 
 elCategorySearch?.addEventListener("input", renderSidebarTree);
+departmentSelect?.addEventListener("change", () => {
+  activeDepartmentId = departmentSelect.value || DEFAULT_DEPARTMENT_ID;
+  saveDepartmentId(activeDepartmentId);
+  syncDepartmentUrl();
+  selectedId = "";
+  hasBrowsedMedia = false;
+  if (elCategorySearch) elCategorySearch.value = "";
+  renderAll();
+});
 landingBrowseBtn?.addEventListener("click", () => {
   if (isSidebarDrawer()) openSidebar();
   window.setTimeout(() => {

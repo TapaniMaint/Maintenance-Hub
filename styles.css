@@ -525,7 +525,8 @@ input[type="text"],
 input[type="email"],
 input[type="password"],
 input[type="search"],
-input[type="file"] {
+input[type="file"],
+select {
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
@@ -536,6 +537,7 @@ input[type="file"] {
 }
 
 input:focus-visible,
+select:focus-visible,
 button:focus-visible,
 a:focus-visible {
   outline: 2px solid var(--accent);
@@ -575,6 +577,16 @@ button.danger:hover { border-color: #ff5a5a; }
 
 .status-banner.error {
   color: #ff9696;
+}
+
+.department-picker {
+  display: inline-flex;
+  min-width: min(190px, 42vw);
+}
+
+.department-picker__select {
+  height: 42px;
+  background: var(--button-bg);
 }
 
 .confirm-modal {
@@ -748,6 +760,9 @@ button.danger:hover { border-color: #ff5a5a; }
 .tree .tree-item.selected {
   border-color: var(--clicked);
   background: var(--tree-selected);
+}
+.tree-item.category-tree__item--ancestor-only {
+  color: var(--muted);
 }
 .tree-item.depth-1 {
   background: var(--tree-depth-1);
