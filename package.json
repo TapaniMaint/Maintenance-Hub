@@ -2,5 +2,8 @@
   "type": "module",
   "scripts": {
     "build": "node generate-headers.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.106.2"
   }
 }

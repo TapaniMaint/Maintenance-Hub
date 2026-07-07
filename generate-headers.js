@@ -3,6 +3,17 @@ import path from "path";
 
 const projectRoot = process.cwd();
 const distDir = path.join(projectRoot, "dist");
+const vendorDir = path.join(projectRoot, "vendor");
+const vendorBundleFile = path.join(vendorDir, "supabase.js");
+const supabaseSourceFile = path.join(
+  projectRoot,
+  "node_modules",
+  "@supabase",
+  "supabase-js",
+  "dist",
+  "umd",
+  "supabase.js"
+);
 const sourceHeadersFile = path.join(projectRoot, "_headers");
 const sourceRedirectsFile = path.join(projectRoot, "_redirects");
 const distHeadersFile = path.join(distDir, "_headers");
@@ -22,6 +33,7 @@ const staticFiles = [
 ];
 const staticDirs = [
   "images",
+  "vendor",
   "public"
 ];
 
@@ -29,6 +41,15 @@ function ensureDist() {
   if (!fs.existsSync(distDir)) {
     fs.mkdirSync(distDir, { recursive: true });
   }
+}
+
+function copyVendorScripts() {
+  if (!fs.existsSync(vendorDir)) {
+    fs.mkdirSync(vendorDir, { recursive: true });
+  }
+
+  fs.copyFileSync(supabaseSourceFile, vendorBundleFile);
+  console.log("Copied Supabase client locally.");
 }
 
 function copyStaticSite() {
@@ -80,7 +101,15 @@ function copyHeadersWithOptionalAuthOverride() {
   console.log("Copied _headers to dist.");
 }
 
+function assertDeploymentSecurityChecks() {
+  if (process.env.SUPABASE_AUTH_RATE_LIMITS_CONFIRMED !== "true") {
+    throw new Error("Set SUPABASE_AUTH_RATE_LIMITS_CONFIRMED=true after enabling Supabase Auth rate limits for this project.");
+  }
+}
+
+assertDeploymentSecurityChecks();
 ensureDist();
+copyVendorScripts();
 copyStaticSite();
 copyRedirects();
 copyHeadersWithOptionalAuthOverride();
