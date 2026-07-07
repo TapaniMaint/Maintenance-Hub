@@ -124,6 +124,16 @@ function defaultDepartments(root) {
         heroImage: "images/Columbia Palisades.jpg"
       },
       categoryIds: []
+    },
+    {
+      id: "maintenance-tech",
+      name: "Maintenance Tech",
+      landing: {
+        title: "Maintenance Tech",
+        subtitle: "Maintenance schedules, service references, and technician resources.",
+        heroImage: "images/Columbia Palisades.jpg"
+      },
+      categoryIds: []
     }
   ];
 }
