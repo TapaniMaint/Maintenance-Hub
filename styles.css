@@ -75,18 +75,18 @@
   --button-bg: #132018;
   --button-hover: #1b2d22;
   --button-border: #36513f;
-  --tree-base: #122019;
-  --tree-selected: #26331a;
+  --tree-base: #17351f;
+  --tree-selected: #4b4f13;
   --header-bg: #0d140f;
   --input-bg: #0d1510;
-  --tree-hover: #1a2b21;
-  --tree-depth-1: #15241b;
-  --tree-depth-2: #132219;
-  --tree-depth-3: #111f17;
-  --tree-depth-4: #101c15;
-  --tree-depth-5: #0e1912;
-  --tree-depth-6: #0c160f;
-  --tree-drop: #203826;
+  --tree-hover: #245f33;
+  --tree-depth-1: #1d4f2b;
+  --tree-depth-2: #24553c;
+  --tree-depth-3: #285363;
+  --tree-depth-4: #3c426b;
+  --tree-depth-5: #514069;
+  --tree-depth-6: #5d3d53;
+  --tree-drop: #6d6a1e;
   --media-bg: #070d09;
   --ghost-hover: rgba(103, 197, 135, 0.1);
   --open-pill-text: rgba(237, 245, 239, 0.9);
@@ -107,18 +107,18 @@
   --button-bg: #141c22;
   --button-hover: #1e2a32;
   --button-border: #3b4a54;
-  --tree-base: #131c22;
-  --tree-selected: #28331d;
+  --tree-base: #183047;
+  --tree-selected: #51431c;
   --header-bg: #0d1114;
   --input-bg: #0d1216;
-  --tree-hover: #1d2a32;
-  --tree-depth-1: #172128;
-  --tree-depth-2: #151f26;
-  --tree-depth-3: #131c22;
-  --tree-depth-4: #111a20;
-  --tree-depth-5: #10171d;
-  --tree-depth-6: #0e151a;
-  --tree-drop: #2e3022;
+  --tree-hover: #284f72;
+  --tree-depth-1: #1f4461;
+  --tree-depth-2: #234c78;
+  --tree-depth-3: #314987;
+  --tree-depth-4: #55447e;
+  --tree-depth-5: #6b3f66;
+  --tree-depth-6: #74404b;
+  --tree-drop: #70551d;
   --media-bg: #070a0d;
   --ghost-hover: rgba(240, 179, 90, 0.1);
   --open-pill-text: rgba(233, 238, 242, 0.9);
@@ -1006,6 +1006,24 @@ button.danger:hover { border-color: #ff5a5a; }
   border-color: var(--clicked);
   background: var(--tree-selected);
 }
+
+:root[data-theme="forest"] .tree-item,
+:root[data-theme="steel"] .tree-item {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+:root[data-theme="forest"] .tree .tree-item:hover,
+:root[data-theme="steel"] .tree .tree-item:hover {
+  border-color: var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
+:root[data-theme="forest"] .tree .tree-item.selected,
+:root[data-theme="steel"] .tree .tree-item.selected {
+  border-color: var(--clicked);
+  box-shadow: inset 5px 0 0 var(--clicked), 0 0 0 1px var(--clicked);
+}
+
 .tree-item.category-tree__item--ancestor-only {
   color: var(--muted);
 }
