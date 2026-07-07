@@ -652,13 +652,22 @@ button.danger:hover { border-color: #ff5a5a; }
 }
 
 .department-picker {
-  display: inline-flex;
-  min-width: min(190px, 42vw);
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .department-picker__select {
-  height: 42px;
+  height: 34px;
+  padding: 6px 8px;
+  border-radius: 8px;
   background: var(--button-bg);
+}
+
+.settings__department {
+  margin-bottom: 10px;
 }
 
 .department-admin {

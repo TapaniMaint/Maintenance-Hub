@@ -19,10 +19,6 @@
       <a class="header-home-link app-header__home-link" id="homeBtn" href="/">Home</a>
     </div>
     <nav class="header-actions app-header__actions" aria-label="Primary navigation">
-      <label class="department-picker" for="departmentSelect">
-        <span class="sr-only">Department</span>
-        <select id="departmentSelect" class="department-picker__select" aria-label="Department"></select>
-      </label>
       <div class="settings-menu settings">
         <button class="settings-toggle settings__toggle" id="settingsToggleBtn" type="button" aria-label="Settings"
           aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel">
@@ -34,6 +30,10 @@
         </button>
         <div class="settings-panel settings__panel" id="settingsPanel" role="dialog" aria-labelledby="settingsTitle" hidden>
           <div class="settings-title settings__title" id="settingsTitle">Settings</div>
+          <label class="department-picker settings__department" for="departmentSelect">
+            <span>Department</span>
+            <select id="departmentSelect" class="department-picker__select" aria-label="Department"></select>
+          </label>
           <fieldset class="theme-options settings__options">
             <legend>Mode</legend>
             <label class="theme-option settings__option">
