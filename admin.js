@@ -24,6 +24,16 @@ const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "im
 const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/quicktime", "video/webm", "video/ogg"]);
 const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
 const ALLOWED_VIDEO_EXTENSIONS = [".mp4", ".mov", ".webm", ".ogv"];
+const ALLOWED_MEDIA_HOSTS = new Set([
+  "zaxjhojgxwbldnwempzl.supabase.co",
+  "1drv.ms"
+]);
+const ALLOWED_MEDIA_HOST_SUFFIXES = [
+  ".sharepoint.com",
+  ".sharepoint-df.com",
+  ".onedrive.live.com",
+  ".1drv.com"
+];
 
 let data = loadData();
 let selectedId = data.root.children[0]?.id || "root";
@@ -217,6 +227,11 @@ function activeLightboxMedia() {
   return lightboxVideo && !lightboxVideo.hidden ? lightboxVideo : lightboxImg;
 }
 
+function isAllowedMediaHost(hostname) {
+  const host = hostname.toLowerCase();
+  return ALLOWED_MEDIA_HOSTS.has(host) || ALLOWED_MEDIA_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix));
+}
+
 function applyImageZoom() {
   const transform = `translate3d(${imagePanX}px, ${imagePanY}px, 0) scale(${imageZoom})`;
   [lightboxImg, lightboxVideo].forEach((media) => {
@@ -407,6 +422,9 @@ function normalizeOneDriveUrl(url) {
   if (parsed.protocol !== "https:") {
     throw new Error("Only HTTPS media links are allowed.");
   }
+  if (!isAllowedMediaHost(parsed.hostname)) {
+    throw new Error("Media links must come from an approved storage host.");
+  }
 
   if (/onedrive|sharepoint/i.test(parsed.hostname) && !parsed.searchParams.has("download")) {
     parsed.searchParams.set("download", "1");
@@ -425,7 +443,7 @@ function safeMediaUrl(value) {
 
   try {
     const parsed = new URL(trimmed, window.location.href);
-    if (parsed.protocol === "https:") {
+    if (parsed.protocol === "https:" && isAllowedMediaHost(parsed.hostname)) {
       return parsed.href;
     }
   } catch {
@@ -479,6 +497,11 @@ function setStatus(message, type = "info") {
   if (!statusBanner) return;
   statusBanner.textContent = message;
   statusBanner.className = `status-banner ${type}`;
+}
+
+function showError(error, message) {
+  console.warn(message, error);
+  setStatus(message, "error");
 }
 
 function setAdminEnabledState(enabled) {
@@ -943,7 +966,7 @@ async function persistData() {
   } catch (error) {
     data = loadData();
     renderTree();
-    setStatus(error.message || "Unable to save changes.", "error");
+    showError(error, "Unable to save changes.");
     throw error;
   }
 }
@@ -956,7 +979,7 @@ async function refreshAuthState() {
     signOutBtn.hidden = true;
     authSummary.textContent = "Write access stays blocked until an admin session is active.";
     setAdminEnabledState(false);
-    setStatus("Public reads are available. Admin writes require sign-in.", "info");
+    setStatus("Sign in with an admin account to load or change data.", "info");
     return;
   }
 
@@ -971,6 +994,7 @@ async function refreshAuthState() {
   authSummary.textContent = `Signed in as ${user.email || "admin"} with Supabase Auth.`;
   setAdminEnabledState(true);
   setStatus("Admin session active. Supabase writes now use the user's access token.", "success");
+  await syncFromRemote(applyRemote);
   renderTree();
 }
 
@@ -984,7 +1008,7 @@ authForm?.addEventListener("submit", async (event) => {
     await refreshAuthState();
   } catch (error) {
     setAdminEnabledState(false);
-    setStatus(error.message || "Sign-in failed.", "error");
+    showError(error, "Sign-in failed.");
   }
 });
 
@@ -995,7 +1019,7 @@ signOutBtn?.addEventListener("click", async () => {
     setStatus("Signed out.", "info");
     await refreshAuthState();
   } catch (error) {
-    setStatus(error.message || "Sign-out failed.", "error");
+    showError(error, "Sign-out failed.");
   }
 });
 
@@ -1023,7 +1047,7 @@ document.getElementById("addImgUrlBtn")?.addEventListener("click", async () => {
 
     await persistData();
   } catch (error) {
-    setStatus(error.message || "Unable to add the media link.", "error");
+    showError(error, "Unable to add the media link.");
   }
 });
 
@@ -1094,7 +1118,7 @@ document.getElementById("deleteBtn")?.addEventListener("click", async () => {
     selectedId = data.root.children[0]?.id || "root";
     await persistData();
   } catch (error) {
-    setStatus(error.message || "Unable to delete the selected node.", "error");
+    showError(error, "Unable to delete the selected node.");
   }
 });
 
@@ -1117,7 +1141,7 @@ document.getElementById("addImagesBtn")?.addEventListener("click", async () => {
     elImgInput.value = "";
     await persistData();
   } catch (error) {
-    setStatus(error.message || "Upload failed.", "error");
+    showError(error, "Upload failed.");
   }
 });
 
@@ -1145,14 +1169,12 @@ elClearImagesBtn?.addEventListener("click", async () => {
     selectedMediaKeys.clear();
     await persistData();
   } catch (error) {
-    setStatus(error.message || "Unable to delete selected media.", "error");
+    showError(error, "Unable to delete selected media.");
   }
 });
 
 onAuthStateChange(() => {
   void refreshAuthState();
 });
-
-syncFromRemote(applyRemote);
 
 void refreshAuthState();

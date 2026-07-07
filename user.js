@@ -3,6 +3,16 @@ import { getUser, onAuthStateChange, signOut } from "./supabase-client.js";
 
 const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
 const THEME_KEY = "maintenanceHubTheme_v1";
+const ALLOWED_MEDIA_HOSTS = new Set([
+  "zaxjhojgxwbldnwempzl.supabase.co",
+  "1drv.ms"
+]);
+const ALLOWED_MEDIA_HOST_SUFFIXES = [
+  ".sharepoint.com",
+  ".sharepoint-df.com",
+  ".onedrive.live.com",
+  ".1drv.com"
+];
 
 let data = loadData();
 let selectedId = "";
@@ -225,6 +235,11 @@ function canUseCustomImageZoom() {
 
 function activeLightboxMedia() {
   return lightboxVideo && !lightboxVideo.hidden ? lightboxVideo : lightboxImg;
+}
+
+function isAllowedMediaHost(hostname) {
+  const host = hostname.toLowerCase();
+  return ALLOWED_MEDIA_HOSTS.has(host) || ALLOWED_MEDIA_HOST_SUFFIXES.some((suffix) => host.endsWith(suffix));
 }
 
 function applyImageZoom() {
@@ -549,7 +564,7 @@ function safeMediaUrl(value) {
 
   try {
     const parsed = new URL(trimmed, window.location.href);
-    if (parsed.protocol === "https:") {
+    if (parsed.protocol === "https:" && isAllowedMediaHost(parsed.hostname)) {
       return parsed.href;
     }
   } catch {

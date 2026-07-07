@@ -1,5 +1,5 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https://zaxjhojgxwbldnwempzl.supabase.co wss://zaxjhojgxwbldnwempzl.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https://zaxjhojgxwbldnwempzl.supabase.co https://*.sharepoint.com https://*.sharepoint-df.com https://*.onedrive.live.com https://1drv.ms https://*.1drv.com; media-src 'self' data: blob: https://zaxjhojgxwbldnwempzl.supabase.co https://*.sharepoint.com https://*.sharepoint-df.com https://*.onedrive.live.com https://1drv.ms https://*.1drv.com; connect-src 'self' https://zaxjhojgxwbldnwempzl.supabase.co wss://zaxjhojgxwbldnwempzl.supabase.co; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
   Cache-Control: no-cache
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff

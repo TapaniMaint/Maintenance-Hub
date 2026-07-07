@@ -2,6 +2,7 @@ import { SUPABASE_CONFIG } from "./supabase-config.js";
 import { getAccessToken, requireAdminAccessToken, supabase } from "./supabase-client.js";
 
 const STORE_KEY = "maintenanceHubData_v1";
+const SIGNED_MEDIA_URL_TTL_SECONDS = 60 * 60;
 
 export function remoteEnabled() {
   return !!(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey);
@@ -109,13 +110,23 @@ function tableUrl(table, query = "") {
   return query ? `${base}?${query}` : base;
 }
 
-function publicStorageUrl(path) {
-  return `${SUPABASE_CONFIG.url}/storage/v1/object/public/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
-}
-
 function storageObjectUrl(path = "") {
   const suffix = path ? `/${encodeURI(path)}` : "";
   return `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}${suffix}`;
+}
+
+async function signedStorageUrl(path) {
+  if (!path || !supabase) return "";
+
+  const { data, error } = await supabase.storage
+    .from(SUPABASE_CONFIG.storageBucket)
+    .createSignedUrl(path, SIGNED_MEDIA_URL_TTL_SECONDS);
+
+  if (error) {
+    throw new Error(`Supabase storage signed URL failed: ${error.message}`);
+  }
+
+  return data?.signedUrl || "";
 }
 
 export function storagePathFromMedia(item) {
@@ -211,8 +222,8 @@ function mediaStoragePathFor(categoryPath, item) {
 async function requestJson(url, options = {}) {
   const res = await fetch(url, options);
   if (!res.ok) {
-    const details = await res.text().catch(() => "");
-    throw new Error(`Supabase request failed: ${res.status}${details ? ` - ${details}` : ""}`);
+    console.warn("Supabase request failed.", { status: res.status });
+    throw new Error(`Supabase request failed (${res.status}).`);
   }
   if (res.status === 204) return null;
   const text = await res.text();
@@ -254,7 +265,7 @@ function flattenTree(root) {
   return { categories, media };
 }
 
-function buildTree(categories, media) {
+async function buildTree(categories, media) {
   const root = { id: "root", name: "Maintenance Hub", images: [], children: [] };
   const byId = new Map(categories.map(row => [
     row.id,
@@ -268,7 +279,7 @@ function buildTree(categories, media) {
       id: item.id,
       name: item.name,
       fileName: item.file_name || "",
-      url: item.url || (item.storage_path ? publicStorageUrl(item.storage_path) : ""),
+      url: item.url || (item.storage_path ? await signedStorageUrl(item.storage_path) : ""),
       storagePath: item.storage_path || ""
     });
   }
@@ -487,7 +498,7 @@ export async function uploadMediaFile(file, categoryId, categoryPath = []) {
     id,
     name: file.name,
     fileName: file.name,
-    url: publicStorageUrl(path),
+    url: await signedStorageUrl(path),
     storagePath: path
   };
 }
@@ -516,7 +527,7 @@ export async function alignMediaStoragePaths(root) {
       }
 
       img.storagePath = nextStoragePath;
-      img.url = publicStorageUrl(nextStoragePath);
+      img.url = await signedStorageUrl(nextStoragePath);
     }
 
     for (const child of node.children || []) {

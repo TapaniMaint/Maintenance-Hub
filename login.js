@@ -71,6 +71,11 @@ function setStatus(message, type = "info") {
   statusBanner.className = `status-banner ${type}`;
 }
 
+function showError(error, message) {
+  console.warn(message, error);
+  setStatus(message, "error");
+}
+
 function redirectToUserPortal() {
   window.location.assign("/index.html");
 }
@@ -104,7 +109,7 @@ authForm?.addEventListener("submit", async (event) => {
     passwordInput.value = "";
     redirectToUserPortal();
   } catch (error) {
-    setStatus(error.message || "Authentication failed.", "error");
+    showError(error, "Authentication failed.");
   } finally {
     authSubmitBtn.disabled = false;
   }
@@ -119,7 +124,7 @@ getUser()
     if (user) redirectToUserPortal();
   })
   .catch((error) => {
-    setStatus(error.message || "Unable to check session.", "error");
+    showError(error, "Unable to check session.");
   });
 
 onAuthStateChange((session) => {

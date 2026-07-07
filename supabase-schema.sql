@@ -44,16 +44,24 @@ revoke all on schema private from public;
 alter table public.categories enable row level security;
 alter table public.media enable row level security;
 
-grant usage on schema public to anon, authenticated;
-grant select on public.categories to anon, authenticated;
-grant select on public.media to anon, authenticated;
+revoke usage on schema public from public;
+revoke usage on schema public from anon;
+revoke select on public.categories from public;
+revoke select on public.media from public;
+revoke select on public.categories from anon;
+revoke select on public.media from anon;
+
+grant usage on schema public to authenticated;
+grant select on public.categories to authenticated;
+grant select on public.media to authenticated;
 grant insert, update, delete on public.categories to authenticated;
 grant insert, update, delete on public.media to authenticated;
 
 drop policy if exists "Public read categories" on public.categories;
-create policy "Public read categories"
+drop policy if exists "Authenticated read categories" on public.categories;
+create policy "Authenticated read categories"
   on public.categories for select
-  to anon, authenticated
+  to authenticated
   using (true);
 
 drop policy if exists "Admin write categories" on public.categories;
@@ -76,9 +84,10 @@ create policy "Admin write categories"
   );
 
 drop policy if exists "Public read media" on public.media;
-create policy "Public read media"
+drop policy if exists "Authenticated read media" on public.media;
+create policy "Authenticated read media"
   on public.media for select
-  to anon, authenticated
+  to authenticated
   using (true);
 
 drop policy if exists "Admin write media" on public.media;
@@ -104,7 +113,7 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values (
   'maintenance-media',
   'maintenance-media',
-  true,
+  false,
   52428800,
   array[
     'image/jpeg',
@@ -124,9 +133,10 @@ set
   allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "Public read maintenance media files" on storage.objects;
-create policy "Public read maintenance media files"
+drop policy if exists "Authenticated read maintenance media files" on storage.objects;
+create policy "Authenticated read maintenance media files"
   on storage.objects for select
-  to anon, authenticated
+  to authenticated
   using (bucket_id = 'maintenance-media');
 
 drop policy if exists "Admin insert maintenance media files" on storage.objects;
