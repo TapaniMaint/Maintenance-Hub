@@ -178,7 +178,7 @@ function showLandingPage() {
   closeSidebar();
   closeSettingsPanel();
   renderAll();
-  document.querySelector(".content")?.scrollTo({ top: 0, behavior: "smooth" });
+  document.querySelector(".portal-content, .content")?.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 homeBtn?.addEventListener("click", (event) => {
@@ -484,7 +484,7 @@ function renderSidebarTree() {
 
   if (searchQuery && visibleCount === 0) {
     const empty = document.createElement("div");
-    empty.className = "tree-empty";
+    empty.className = "tree-empty category-tree__empty";
     empty.textContent = "No matching categories.";
     elTree.appendChild(empty);
   }
@@ -499,28 +499,28 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
   const shouldForceOpenForSearch = searchQuery && !directSearchMatch && descendantSearchMatch;
   const isExpanded = hasChildren && (expanded.has(node.id) || shouldForceOpenForSearch);
   row.type = "button";
-  row.className = "tree-item" + (node.id === selectedId ? " selected" : "");
+  row.className = "tree-item category-tree__item" + (node.id === selectedId ? " selected category-tree__item--selected" : "");
   row.style.setProperty("--tree-depth", String(depth));
   row.dataset.depth = String(depth);
   row.setAttribute("aria-current", node.id === selectedId ? "true" : "false");
   if (hasChildren) setAriaExpanded(row, isExpanded);
-  if (depth > 0) row.classList.add(`depth-${Math.min(depth, 6)}`);
+  if (depth > 0) row.classList.add(`depth-${Math.min(depth, 6)}`, `category-tree__item--depth-${Math.min(depth, 6)}`);
 
   const left = document.createElement("div");
-  left.className = "left";
+  left.className = "left category-tree__item-content";
 
   const toggleIndicator = document.createElement("span");
-  toggleIndicator.className = "tree-toggle-indicator";
+  toggleIndicator.className = "tree-toggle-indicator category-tree__toggle";
   toggleIndicator.setAttribute("aria-hidden", "true");
-  if (hasChildren && isExpanded) toggleIndicator.classList.add("expanded");
-  if (!hasChildren) toggleIndicator.classList.add("leaf");
+  if (hasChildren && isExpanded) toggleIndicator.classList.add("expanded", "category-tree__toggle--expanded");
+  if (!hasChildren) toggleIndicator.classList.add("leaf", "category-tree__toggle--leaf");
 
   const name = document.createElement("div");
-  name.className = "name";
+  name.className = "name category-tree__name";
   name.textContent = node.name;
 
   const meta = document.createElement("div");
-  meta.className = "meta";
+  meta.className = "meta category-tree__meta";
 
   left.appendChild(toggleIndicator);
   left.appendChild(name);
@@ -639,11 +639,11 @@ function renderImagesOnly() {
     const mediaType = mediaTypeFor(img, src);
 
     const card = document.createElement("div");
-    card.className = "card";
-    if (mediaType === "video") card.classList.add("card-video");
+    card.className = "card media-card";
+    if (mediaType === "video") card.classList.add("card-video", "media-card--video");
 
     const media = mediaType === "video" ? document.createElement("video") : document.createElement("img");
-    media.className = "media-lightbox-trigger";
+    media.className = "media-lightbox-trigger media-card__preview";
     if (mediaType === "video") {
       prepareVideoThumbnail(media, src);
     } else {
@@ -654,17 +654,17 @@ function renderImagesOnly() {
 
     if (mediaType === "video") {
       const badge = document.createElement("div");
-      badge.className = "video-badge";
+      badge.className = "video-badge media-card__type-badge";
       badge.setAttribute("aria-hidden", "true");
       badge.textContent = "VIDEO";
       card.appendChild(badge);
     }
 
     const cap = document.createElement("div");
-    cap.className = "cap";
+    cap.className = "cap media-card__caption";
 
     const label = document.createElement("span");
-    label.className = "media-label";
+    label.className = "media-label media-card__label";
     label.textContent = img.name || mediaType;
 
     const spacer = document.createElement("span");
