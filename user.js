@@ -20,6 +20,7 @@ let activeDepartmentId = readDepartmentId();
 let selectedId = "";
 let expanded = loadExpanded();
 let hasBrowsedMedia = false;
+let showingHomePage = true;
 
 function applyRemote(next) {
   data = next;
@@ -176,6 +177,7 @@ function flashSidebar() {
 }
 
 function showLandingPage() {
+  showingHomePage = true;
   selectedId = "";
   hasBrowsedMedia = false;
   closeSidebar();
@@ -430,6 +432,8 @@ lightboxVideo?.addEventListener("click", (event) => event.stopPropagation());
 const elTree = document.getElementById("tree");
 const elUpdatedAt = document.getElementById("updatedAt");
 const elGallery = document.getElementById("gallery");
+const elHomePage = document.getElementById("homePage");
+const elHomeDepartmentList = document.getElementById("homeDepartmentList");
 const elImgHint = document.getElementById("imgHint");
 const elCategorySearch = document.getElementById("categorySearch");
 const elLandingHero = document.getElementById("landingHero");
@@ -520,6 +524,45 @@ function applyDepartmentLanding() {
   if (imageEl) {
     imageEl.src = heroImage;
     imageEl.alt = `${title} landing image`;
+  }
+}
+
+function openDepartmentHome(departmentId) {
+  activeDepartmentId = departmentId || DEFAULT_DEPARTMENT_ID;
+  saveDepartmentId(activeDepartmentId);
+  syncDepartmentUrl();
+  showingHomePage = false;
+  selectedId = "";
+  hasBrowsedMedia = false;
+  if (elCategorySearch) elCategorySearch.value = "";
+  renderAll();
+  document.querySelector(".portal-content, .content")?.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderHomePage() {
+  if (!elHomeDepartmentList) return;
+
+  elHomeDepartmentList.innerHTML = "";
+  for (const department of data.departments || []) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "home-department-card";
+    button.addEventListener("click", () => openDepartmentHome(department.id));
+
+    const title = document.createElement("strong");
+    title.textContent = department.name;
+
+    const subtitle = document.createElement("span");
+    subtitle.textContent = department.landing?.subtitle || "Open department resources.";
+
+    const count = document.createElement("small");
+    const categoryCount = department.categoryIds?.length || 0;
+    count.textContent = categoryCount === 1 ? "1 category" : `${categoryCount} categories`;
+
+    button.appendChild(title);
+    button.appendChild(subtitle);
+    button.appendChild(count);
+    elHomeDepartmentList.appendChild(button);
   }
 }
 
@@ -710,18 +753,21 @@ function renderImagesOnly() {
   if (!elGallery) return;
 
   const found = findNode(data.root, selectedId);
-  const showLanding = !hasBrowsedMedia || !found || !isCategoryVisible(selectedId);
+  const showHome = showingHomePage;
+  const showLanding = !showHome && (!hasBrowsedMedia || !found || !isCategoryVisible(selectedId));
   applyDepartmentLanding();
+  renderHomePage();
 
+  if (elHomePage) elHomePage.hidden = !showHome;
   if (elLandingHero) elLandingHero.hidden = !showLanding;
   if (elLandingFutureSpace) elLandingFutureSpace.hidden = !showLanding;
-  elGallery.hidden = showLanding;
-  if (elImgHint) elImgHint.hidden = showLanding;
+  elGallery.hidden = showHome || showLanding;
+  if (elImgHint) elImgHint.hidden = showHome || showLanding;
   if (elMediaTitle) {
-    elMediaTitle.hidden = showLanding;
-    elMediaTitle.textContent = showLanding ? "" : found.node.name;
+    elMediaTitle.hidden = showHome || showLanding;
+    elMediaTitle.textContent = showHome || showLanding ? "" : found.node.name;
   }
-  if (showLanding) {
+  if (showHome || showLanding) {
     elGallery.innerHTML = "";
     if (elImgHint) elImgHint.textContent = "";
     return;
@@ -797,12 +843,14 @@ departmentSelect?.addEventListener("change", () => {
   activeDepartmentId = departmentSelect.value || DEFAULT_DEPARTMENT_ID;
   saveDepartmentId(activeDepartmentId);
   syncDepartmentUrl();
+  showingHomePage = false;
   selectedId = "";
   hasBrowsedMedia = false;
   if (elCategorySearch) elCategorySearch.value = "";
   renderAll();
 });
 landingBrowseBtn?.addEventListener("click", () => {
+  showingHomePage = false;
   if (isSidebarDrawer()) openSidebar();
   window.setTimeout(() => {
     flashSidebar();
