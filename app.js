@@ -257,6 +257,14 @@ function missingFileNameColumn(error) {
   );
 }
 
+function missingRemoteTable(error) {
+  const message = String(error?.message || "");
+  return message.includes("PGRST205") ||
+    message.includes("42P01") ||
+    message.toLowerCase().includes("could not find the table") ||
+    message.toLowerCase().includes("does not exist");
+}
+
 function mediaRowsForRemote(media) {
   if (supportsMediaFileName) return media;
   return media.map(({ file_name, ...item }) => item);
@@ -311,12 +319,12 @@ function mediaStoragePathFor(categoryPath, item) {
 
 async function requestJson(url, options = {}) {
   const res = await fetch(url, options);
+  const text = await res.text();
   if (!res.ok) {
-    console.warn("Supabase request failed.", { status: res.status });
-    throw new Error(`Supabase request failed (${res.status}).`);
+    console.warn("Supabase request failed.", { status: res.status, body: text });
+    throw new Error(`Supabase request failed (${res.status}). ${text}`);
   }
   if (res.status === 204) return null;
-  const text = await res.text();
   return text ? JSON.parse(text) : null;
 }
 
@@ -355,7 +363,33 @@ function flattenTree(root) {
   return { categories, media };
 }
 
-async function buildTree(categories, media) {
+function departmentRowsForRemote(departments) {
+  return (departments || []).map((department, index) => ({
+    id: department.id,
+    name: department.name || department.id,
+    landing_title: department.landing?.title || department.name || "",
+    landing_subtitle: department.landing?.subtitle || "",
+    landing_hero_image: department.landing?.heroImage || "",
+    category_ids: department.categoryIds || [],
+    sort_order: index,
+    updated_at: new Date().toISOString()
+  }));
+}
+
+function departmentsFromRows(rows) {
+  return (rows || []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    landing: {
+      title: row.landing_title || row.name,
+      subtitle: row.landing_subtitle || "",
+      heroImage: row.landing_hero_image || "images/Columbia Palisades.jpg"
+    },
+    categoryIds: Array.isArray(row.category_ids) ? row.category_ids : []
+  }));
+}
+
+async function buildTree(categories, media, departments = []) {
   const root = { id: "root", name: "Maintenance Hub", images: [], children: [] };
   const byId = new Map(categories.map(row => [
     row.id,
@@ -387,7 +421,12 @@ async function buildTree(categories, media) {
     if (parent) parent.children.push(node);
   }
 
-  return ensureDepartments({ version: 2, updatedAt: new Date().toISOString(), root });
+  return ensureDepartments({
+    version: 2,
+    updatedAt: new Date().toISOString(),
+    root,
+    departments: departmentsFromRows(departments)
+  });
 }
 
 export function loadData() {
@@ -436,6 +475,7 @@ async function fetchRemoteData() {
   if (!remoteEnabled()) return null;
 
   const categoryQuery = "select=id,parent_id,name,sort_order,updated_at&order=sort_order.asc";
+  const departmentQuery = "select=id,name,landing_title,landing_subtitle,landing_hero_image,category_ids,sort_order,updated_at&order=sort_order.asc";
   const mediaQuery = supportsMediaFileName
     ? "select=id,category_id,name,file_name,url,storage_path,sort_order,updated_at&order=sort_order.asc"
     : "select=id,category_id,name,url,storage_path,sort_order,updated_at&order=sort_order.asc";
@@ -449,7 +489,17 @@ async function fetchRemoteData() {
   ]);
 
   if (!categories?.length) return null;
-  return buildTree(categories, media || []);
+  let departments = [];
+  try {
+    departments = await requestJson(tableUrl(SUPABASE_CONFIG.departmentsTable, departmentQuery), {
+      headers: await apiHeaders({ Accept: "application/json" })
+    });
+  } catch (error) {
+    if (!missingRemoteTable(error)) throw error;
+    console.warn("Supabase departments table is missing. Run supabase-schema.sql to persist departments.");
+  }
+
+  return buildTree(categories, media || [], departments || []);
 }
 
 async function fetchRemoteDataWithFallback() {
@@ -486,6 +536,19 @@ export async function pushRemoteData(data) {
   }
 
   const { categories, media } = flattenTree(data.root);
+  const departments = departmentRowsForRemote(data.departments);
+
+  if (departments.length) {
+    await requestJson(tableUrl(SUPABASE_CONFIG.departmentsTable, "on_conflict=id"), {
+      method: "POST",
+      headers: await apiHeaders({
+        admin: true,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal"
+      }),
+      body: JSON.stringify(departments)
+    });
+  }
 
   if (categories.length) {
     await requestJson(tableUrl(SUPABASE_CONFIG.categoriesTable, "on_conflict=id"), {
@@ -526,6 +589,7 @@ export async function pushRemoteData(data) {
   }
 
   const staleStoragePaths = await storagePathsForRowsNotIn(media.map(item => item.id));
+  await deleteRowsNotIn(SUPABASE_CONFIG.departmentsTable, departments.map(item => item.id));
   await deleteRowsNotIn(SUPABASE_CONFIG.mediaTable, media.map(item => item.id));
   await deleteRowsNotIn(SUPABASE_CONFIG.categoriesTable, categories.map(item => item.id));
 

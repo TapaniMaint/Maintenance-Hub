@@ -25,6 +25,19 @@ create table if not exists public.media (
   constraint media_has_source check (url is not null or storage_path is not null)
 );
 
+create table if not exists public.departments (
+  id text primary key,
+  name text not null,
+  landing_title text not null default '',
+  landing_subtitle text not null default '',
+  landing_hero_image text not null default '',
+  category_ids jsonb not null default '[]'::jsonb,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint departments_category_ids_array check (jsonb_typeof(category_ids) = 'array')
+);
+
 alter table public.media
   add column if not exists file_name text;
 
@@ -37,6 +50,9 @@ create index if not exists categories_parent_sort_idx
 
 create index if not exists media_category_sort_idx
   on public.media(category_id, sort_order, name);
+
+create index if not exists departments_sort_idx
+  on public.departments(sort_order, name);
 
 create schema if not exists private;
 revoke all on schema private from public;
@@ -64,19 +80,24 @@ grant execute on function private.has_app_role(text[]) to authenticated;
 
 alter table public.categories enable row level security;
 alter table public.media enable row level security;
+alter table public.departments enable row level security;
 
 revoke usage on schema public from public;
 revoke usage on schema public from anon;
 revoke select on public.categories from public;
 revoke select on public.media from public;
+revoke select on public.departments from public;
 revoke select on public.categories from anon;
 revoke select on public.media from anon;
+revoke select on public.departments from anon;
 
 grant usage on schema public to authenticated;
 grant select on public.categories to authenticated;
 grant select on public.media to authenticated;
+grant select on public.departments to authenticated;
 grant insert, update, delete on public.categories to authenticated;
 grant insert, update, delete on public.media to authenticated;
+grant insert, update, delete on public.departments to authenticated;
 
 drop policy if exists "Public read categories" on public.categories;
 drop policy if exists "Authenticated read categories" on public.categories;
@@ -102,6 +123,19 @@ create policy "Authenticated read media"
 drop policy if exists "Admin write media" on public.media;
 create policy "Admin write media"
   on public.media for all
+  to authenticated
+  using (private.has_app_role(array['admin']))
+  with check (private.has_app_role(array['admin']));
+
+drop policy if exists "Authenticated read departments" on public.departments;
+create policy "Authenticated read departments"
+  on public.departments for select
+  to authenticated
+  using (private.has_app_role(array['admin', 'technician', 'portal_user']));
+
+drop policy if exists "Admin write departments" on public.departments;
+create policy "Admin write departments"
+  on public.departments for all
   to authenticated
   using (private.has_app_role(array['admin']))
   with check (private.has_app_role(array['admin']));
