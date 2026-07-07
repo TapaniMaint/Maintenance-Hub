@@ -270,6 +270,10 @@ body.home-visible .portal-content {
   width: 100%;
 }
 
+body.home-visible #treeToggleBtn {
+  display: none !important;
+}
+
 .panel.content {
   height: calc(100dvh - 82px);
   min-height: 0;
