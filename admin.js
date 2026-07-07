@@ -42,6 +42,7 @@ let selectedDepartmentId = data.defaultDepartmentId || DEFAULT_DEPARTMENT_ID;
 let expanded = loadExpanded();
 let adminEnabled = false;
 let selectedMediaKeys = new Set();
+let departmentCategoryExpanded = new Set();
 
 const authForm = document.getElementById("authForm");
 const adminWorkspace = document.getElementById("adminWorkspace");
@@ -538,6 +539,9 @@ const elDepartmentName = document.getElementById("departmentNameInput");
 const elDepartmentLandingTitle = document.getElementById("departmentLandingTitleInput");
 const elDepartmentLandingSubtitle = document.getElementById("departmentLandingSubtitleInput");
 const elDepartmentLandingImage = document.getElementById("departmentLandingImageInput");
+const elDepartmentCategorySearch = document.getElementById("departmentCategorySearch");
+const elDepartmentCategoryFilter = document.getElementById("departmentCategoryFilter");
+const elDepartmentCategoryCount = document.getElementById("departmentCategoryCount");
 const elDepartmentCategoryList = document.getElementById("departmentCategoryList");
 const elTree = document.getElementById("tree");
 const elSelectedPath = document.getElementById("selectedPath");
@@ -758,16 +762,21 @@ function categoryRows(root) {
 
 function setDepartmentCategoryChecked(categoryId, checked) {
   const found = findNode(data.root, categoryId);
-  if (!found || !elDepartmentCategoryList) return;
+  const department = currentDepartment();
+  if (!found || !department) return;
+  const assignedIds = new Set(department.categoryIds || []);
 
   for (const id of descendantCategoryIds(found.node)) {
-    const input = elDepartmentCategoryList.querySelector(`input[value="${CSS.escape(id)}"]`);
-    if (input) input.checked = checked;
+    if (checked) assignedIds.add(id);
+    else assignedIds.delete(id);
   }
+
+  department.categoryIds = [...assignedIds];
 }
 
 function syncDepartmentCategoryStates() {
   if (!elDepartmentCategoryList) return;
+  const assignedIds = new Set(currentDepartment()?.categoryIds || []);
 
   for (const { node } of categoryRows(data.root).reverse()) {
     const input = elDepartmentCategoryList.querySelector(`input[value="${CSS.escape(node.id)}"]`);
@@ -776,15 +785,86 @@ function syncDepartmentCategoryStates() {
     const childIds = (node.children || []).flatMap((child) => descendantCategoryIds(child));
     if (!childIds.length) {
       input.indeterminate = false;
+      input.checked = assignedIds.has(node.id);
       continue;
     }
 
-    const childInputs = childIds
-      .map((id) => elDepartmentCategoryList.querySelector(`input[value="${CSS.escape(id)}"]`))
-      .filter(Boolean);
-    const checkedCount = childInputs.filter((childInput) => childInput.checked).length;
-    input.indeterminate = checkedCount > 0 && checkedCount < childInputs.length;
-    input.checked = checkedCount === childInputs.length;
+    const checkedCount = childIds.filter((id) => assignedIds.has(id)).length;
+    input.checked = checkedCount === childIds.length && assignedIds.has(node.id);
+    input.indeterminate = (checkedCount > 0 && checkedCount < childIds.length) ||
+      (checkedCount === childIds.length && !assignedIds.has(node.id));
+  }
+}
+
+function categoryMatchesDepartmentView(node, query, filter, assignedIds, path = []) {
+  const text = [...path, node.name].join(" / ").toLowerCase();
+  const searchMatch = !query || text.includes(query);
+  const selectedMatch = assignedIds.has(node.id);
+  const filterMatch = filter === "selected"
+    ? selectedMatch
+    : filter === "unselected"
+      ? !selectedMatch
+      : true;
+
+  return (searchMatch && filterMatch) || (node.children || []).some((child) => (
+    categoryMatchesDepartmentView(child, query, filter, assignedIds, [...path, node.name])
+  ));
+}
+
+function renderDepartmentCategoryNode(node, depth, path, assignedIds, searchQuery, filter) {
+  if (!categoryMatchesDepartmentView(node, searchQuery, filter, assignedIds, path)) return;
+
+  const hasChildren = (node.children || []).length > 0;
+  const forceExpanded = Boolean(searchQuery) || filter !== "all";
+  const isExpanded = forceExpanded || departmentCategoryExpanded.has(node.id);
+  const row = document.createElement("div");
+  row.className = "department-category-option department-category-option--tree";
+  row.style.setProperty("--tree-depth", String(depth));
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "department-category-option__toggle";
+  toggle.setAttribute("aria-label", isExpanded ? `Collapse ${node.name}` : `Expand ${node.name}`);
+  toggle.disabled = !hasChildren;
+  toggle.textContent = hasChildren ? (isExpanded ? "v" : ">") : "";
+  toggle.addEventListener("click", () => {
+    if (departmentCategoryExpanded.has(node.id)) departmentCategoryExpanded.delete(node.id);
+    else departmentCategoryExpanded.add(node.id);
+    renderDepartmentEditor();
+  });
+
+  const label = document.createElement("label");
+  label.className = "department-category-option__label";
+
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.value = node.id;
+  input.checked = assignedIds.has(node.id);
+  input.addEventListener("change", () => {
+    if (hasChildren) setDepartmentCategoryChecked(node.id, input.checked);
+    else {
+      const department = currentDepartment();
+      const nextIds = new Set(department?.categoryIds || []);
+      if (input.checked) nextIds.add(node.id);
+      else nextIds.delete(node.id);
+      if (department) department.categoryIds = [...nextIds];
+    }
+    renderDepartmentEditor();
+  });
+
+  const text = document.createElement("span");
+  text.textContent = node.name;
+
+  label.appendChild(input);
+  label.appendChild(text);
+  row.appendChild(toggle);
+  row.appendChild(label);
+  elDepartmentCategoryList.appendChild(row);
+
+  if (hasChildren && isExpanded) {
+    for (const child of node.children) {
+      renderDepartmentCategoryNode(child, depth + 1, [...path, node.name], assignedIds, searchQuery, filter);
+    }
   }
 }
 
@@ -813,26 +893,15 @@ function renderDepartmentEditor() {
   elDepartmentCategoryList.innerHTML = "";
   const assignedIds = new Set(department.categoryIds || []);
 
-  for (const { node, depth, path } of categoryRows(data.root)) {
-    const label = document.createElement("label");
-    label.className = "department-category-option";
-    label.style.setProperty("--tree-depth", String(depth));
+  if (elDepartmentCategoryCount) {
+    const count = assignedIds.size;
+    elDepartmentCategoryCount.textContent = count === 1 ? "1 selected" : `${count} selected`;
+  }
 
-    const input = document.createElement("input");
-    input.type = "checkbox";
-    input.value = node.id;
-    input.checked = assignedIds.has(node.id);
-    input.addEventListener("change", () => {
-      if ((node.children || []).length) setDepartmentCategoryChecked(node.id, input.checked);
-      syncDepartmentCategoryStates();
-    });
-
-    const text = document.createElement("span");
-    text.textContent = path;
-
-    label.appendChild(input);
-    label.appendChild(text);
-    elDepartmentCategoryList.appendChild(label);
+  const searchQuery = String(elDepartmentCategorySearch?.value || "").trim().toLowerCase();
+  const filter = elDepartmentCategoryFilter?.value || "all";
+  for (const child of data.root.children || []) {
+    renderDepartmentCategoryNode(child, 0, [], assignedIds, searchQuery, filter);
   }
 
   syncDepartmentCategoryStates();
@@ -845,8 +914,7 @@ function applyDepartmentForm(department) {
     subtitle: (elDepartmentLandingSubtitle?.value || "").trim(),
     heroImage: (elDepartmentLandingImage?.value || "").trim() || "images/Columbia Palisades.jpg"
   };
-  department.categoryIds = Array.from(elDepartmentCategoryList?.querySelectorAll("input[type='checkbox']:checked") || [])
-    .map((input) => input.value);
+  department.categoryIds = Array.from(new Set(department.categoryIds || []));
 }
 
 function renderTree() {
@@ -1227,26 +1295,35 @@ document.getElementById("departmentSaveBtn")?.addEventListener("click", async ()
 
 document.getElementById("departmentSelectAllBtn")?.addEventListener("click", () => {
   const department = currentDepartment();
-  if (!department || !elDepartmentCategoryList) return;
+  if (!department) return;
 
-  const count = elDepartmentCategoryList.querySelectorAll("input[type='checkbox']").length;
+  const allIds = categoryRows(data.root).map(({ node }) => node.id);
+  const count = allIds.length;
   const message = `Select all ${count} categories for "${department.name}"? This may expose media from every shared category to this department.`;
   if (!window.confirm(message)) return;
 
-  elDepartmentCategoryList
-    .querySelectorAll("input[type='checkbox']")
-    .forEach((input) => {
-      input.checked = true;
-    });
+  department.categoryIds = allIds;
+  renderDepartmentEditor();
 });
 
 document.getElementById("departmentClearAllBtn")?.addEventListener("click", () => {
-  if (!elDepartmentCategoryList) return;
-  elDepartmentCategoryList
-    .querySelectorAll("input[type='checkbox']")
-    .forEach((input) => {
-      input.checked = false;
-    });
+  const department = currentDepartment();
+  if (!department) return;
+  department.categoryIds = [];
+  renderDepartmentEditor();
+});
+
+elDepartmentCategorySearch?.addEventListener("input", renderDepartmentEditor);
+elDepartmentCategoryFilter?.addEventListener("change", renderDepartmentEditor);
+
+document.getElementById("departmentExpandAllBtn")?.addEventListener("click", () => {
+  departmentCategoryExpanded = new Set(categoryRows(data.root).map(({ node }) => node.id));
+  renderDepartmentEditor();
+});
+
+document.getElementById("departmentCollapseAllBtn")?.addEventListener("click", () => {
+  departmentCategoryExpanded.clear();
+  renderDepartmentEditor();
 });
 
 document.getElementById("addImgUrlBtn")?.addEventListener("click", async () => {

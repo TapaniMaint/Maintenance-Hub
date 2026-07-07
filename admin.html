@@ -113,12 +113,27 @@
               </label>
             </div>
             <div class="section-header department-admin__category-header">
-              <h3 class="panel-title">Visible Categories</h3>
+              <div>
+                <h3 class="panel-title">Visible Categories</h3>
+                <p class="small" id="departmentCategoryCount">0 selected</p>
+              </div>
               <div class="department-admin__category-actions">
                 <button id="departmentSelectAllBtn" type="button">Select all</button>
                 <button id="departmentClearAllBtn" class="ghost" type="button">Clear all</button>
                 <button id="departmentSaveBtn" type="button">Save department</button>
               </div>
+            </div>
+            <div class="department-admin__category-tools">
+              <label class="sr-only" for="departmentCategorySearch">Search visible categories</label>
+              <input id="departmentCategorySearch" type="search" placeholder="Search categories" autocomplete="off" />
+              <label class="sr-only" for="departmentCategoryFilter">Category filter</label>
+              <select id="departmentCategoryFilter" aria-label="Category filter">
+                <option value="all">All</option>
+                <option value="selected">Selected</option>
+                <option value="unselected">Unselected</option>
+              </select>
+              <button id="departmentExpandAllBtn" type="button">Expand all</button>
+              <button id="departmentCollapseAllBtn" type="button">Collapse all</button>
             </div>
             <div class="department-category-list" id="departmentCategoryList" aria-label="Department category assignment"></div>
           </div>
