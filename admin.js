@@ -1289,6 +1289,9 @@ document.getElementById("departmentAddBtn")?.addEventListener("click", async () 
 document.getElementById("departmentSaveBtn")?.addEventListener("click", async () => {
   const department = currentDepartment();
   if (!department) return;
+  const selectedCount = department.categoryIds?.length || 0;
+  const message = `Save "${department.name}" with ${selectedCount} visible categories? This changes what users in this department can see.`;
+  if (!window.confirm(message)) return;
   applyDepartmentForm(department);
   await persistData();
 });
@@ -1309,6 +1312,9 @@ document.getElementById("departmentSelectAllBtn")?.addEventListener("click", () 
 document.getElementById("departmentClearAllBtn")?.addEventListener("click", () => {
   const department = currentDepartment();
   if (!department) return;
+  const count = department.categoryIds?.length || 0;
+  const message = `Clear all visible categories for "${department.name}"? This hides ${count} currently selected categories from this department until changed again.`;
+  if (!window.confirm(message)) return;
   department.categoryIds = [];
   renderDepartmentEditor();
 });
