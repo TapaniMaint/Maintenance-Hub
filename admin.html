@@ -30,6 +30,21 @@
         </button>
         <div class="settings-panel" id="settingsPanel" role="dialog" aria-labelledby="settingsTitle" hidden>
           <div class="settings-title" id="settingsTitle">Settings</div>
+          <section class="settings-auth" aria-labelledby="adminAccessTitle">
+            <h2 class="settings-auth__title" id="adminAccessTitle">Admin Access</h2>
+            <form class="auth-form settings-auth__form" id="authForm">
+              <label class="sr-only" for="adminEmail">Admin email</label>
+              <input id="adminEmail" type="email" autocomplete="username" placeholder="Admin email" required />
+              <label class="sr-only" for="adminPassword">Password</label>
+              <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Password" required />
+              <div class="row settings-auth__actions">
+                <button id="signInBtn" type="submit">Sign in</button>
+                <button id="signOutBtn" type="button" class="ghost" hidden>Sign out</button>
+              </div>
+            </form>
+            <p class="small" id="authSummary">Write access blocked until admin session is active.</p>
+            <div class="status-banner settings-auth__status" id="statusBanner" role="status" aria-live="polite"></div>
+          </section>
           <fieldset class="theme-options">
             <legend>Mode</legend>
             <label class="theme-option">
@@ -50,27 +65,6 @@
   <div class="overlay" id="overlay" hidden></div>
 
   <main class="main">
-    <section class="panel auth-shell" aria-labelledby="adminAccessTitle">
-      <div class="auth-card">
-        <div class="auth-copy">
-          <h1 id="adminAccessTitle">Admin Access</h1>
-          <p class="small">Sign in with a Supabase Auth account that has <code>app_metadata.role = "admin"</code>.</p>
-        </div>
-        <form class="auth-form" id="authForm">
-          <label class="sr-only" for="adminEmail">Admin email</label>
-          <input id="adminEmail" type="email" autocomplete="username" placeholder="Admin email" required />
-          <label class="sr-only" for="adminPassword">Password</label>
-          <input id="adminPassword" type="password" autocomplete="current-password" placeholder="Password" required />
-          <div class="row">
-            <button id="signInBtn" type="submit">Sign in</button>
-            <button id="signOutBtn" type="button" class="ghost" hidden>Sign out</button>
-          </div>
-        </form>
-        <p class="small" id="authSummary">Write access stays blocked until an admin session is active.</p>
-        <div class="status-banner" id="statusBanner" role="status" aria-live="polite"></div>
-      </div>
-    </section>
-
     <section class="workspace-shell hidden" id="adminWorkspace" aria-label="Admin workspace">
       <aside class="panel sidebar" id="sidebar" aria-labelledby="categoryEditorTitle">
         <div class="section-header">

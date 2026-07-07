@@ -1262,6 +1262,47 @@ button.danger:hover { border-color: #ff5a5a; }
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
 }
 
+.admin-page .settings-panel {
+  width: min(300px, calc(100vw - 24px));
+}
+
+.settings-auth {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-auth__title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.settings-auth__form {
+  gap: 8px;
+}
+
+.settings-auth__form input {
+  min-height: 34px;
+  padding: 7px 9px;
+  border-radius: 8px;
+}
+
+.settings-auth__actions {
+  gap: 8px;
+}
+
+.settings-auth__actions button {
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
+.settings-auth__status {
+  min-height: 0;
+}
+
 .settings-sign-out {
   width: 100%;
   margin-top: 10px;
