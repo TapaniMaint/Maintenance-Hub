@@ -32,14 +32,19 @@ create table if not exists public.departments (
   landing_subtitle text not null default '',
   landing_hero_image text not null default '',
   category_ids jsonb not null default '[]'::jsonb,
+  snapshot_items jsonb not null default '[]'::jsonb,
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint departments_category_ids_array check (jsonb_typeof(category_ids) = 'array')
+  constraint departments_category_ids_array check (jsonb_typeof(category_ids) = 'array'),
+  constraint departments_snapshot_items_array check (jsonb_typeof(snapshot_items) = 'array')
 );
 
 alter table public.media
   add column if not exists file_name text;
+
+alter table public.departments
+  add column if not exists snapshot_items jsonb not null default '[]'::jsonb;
 
 update public.media
   set file_name = name

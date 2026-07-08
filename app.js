@@ -4,6 +4,32 @@ import { getAccessToken, requireAdminAccessToken, supabase } from "./supabase-cl
 const STORE_KEY = "maintenanceHubData_v1";
 const SIGNED_MEDIA_URL_TTL_SECONDS = 60 * 60;
 export const DEFAULT_DEPARTMENT_ID = "mechanics";
+export const LANDING_SNAPSHOT_ITEMS = [
+  {
+    id: "fuel-pumped-ytd",
+    label: "Fuel pumped YTD",
+    value: "482,300 gal",
+    note: "Diesel, DEF, and lube tracking"
+  },
+  {
+    id: "pm-services-complete",
+    label: "PM services complete",
+    value: "1,248",
+    note: "Year to date"
+  },
+  {
+    id: "open-down-units",
+    label: "Open down units",
+    value: "17",
+    note: "Awaiting repair or parts"
+  },
+  {
+    id: "work-orders-closed",
+    label: "Work orders closed",
+    value: "3,914",
+    note: "Shop and field combined"
+  }
+];
 
 export function remoteEnabled() {
   return !!(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey);
@@ -104,6 +130,8 @@ function categoryIds(root) {
 }
 
 function defaultDepartments(root) {
+  const allSnapshotItems = LANDING_SNAPSHOT_ITEMS.map((item) => item.id);
+
   return [
     {
       id: DEFAULT_DEPARTMENT_ID,
@@ -111,9 +139,10 @@ function defaultDepartments(root) {
       landing: {
         title: "Mechanics",
         subtitle: "Service guides, repair media, and PM references.",
-        heroImage: "images/Columbia Palisades.jpg"
+        heroImage: "images/Tapani Inc Civil Site.jpg"
       },
-      categoryIds: categoryIds(root)
+      categoryIds: categoryIds(root),
+      snapshotItems: ["open-down-units", "work-orders-closed"]
     },
     {
       id: "crew-truck",
@@ -121,9 +150,10 @@ function defaultDepartments(root) {
       landing: {
         title: "Crew Truck",
         subtitle: "Truck setup, daily checks, and field references.",
-        heroImage: "images/Columbia Palisades.jpg"
+        heroImage: "images/Crew Truck.jpg"
       },
-      categoryIds: []
+      categoryIds: [],
+      snapshotItems: allSnapshotItems
     },
     {
       id: "maintenance-tech",
@@ -131,9 +161,21 @@ function defaultDepartments(root) {
       landing: {
         title: "Maintenance Tech",
         subtitle: "Maintenance schedules, service references, and technician resources.",
-        heroImage: "images/Columbia Palisades.jpg"
+        heroImage: "images/Maint Tech.jpg"
       },
-      categoryIds: []
+      categoryIds: [],
+      snapshotItems: allSnapshotItems
+    },
+    {
+      id: "tapani-trucking",
+      name: "Tapani Trucking",
+      landing: {
+        title: "Tapani Trucking",
+        subtitle: "Maintenance schedules, service references, and technician resources.",
+        heroImage: "images/Tapani Trucking.jpg"
+      },
+      categoryIds: [],
+      snapshotItems: allSnapshotItems
     }
   ];
 }
@@ -155,6 +197,7 @@ export function ensureDepartments(data) {
 
   const defaults = defaultDepartments(data.root);
   const byDefaultId = new Map(defaults.map((department) => [department.id, department]));
+  const allSnapshotItems = LANDING_SNAPSHOT_ITEMS.map((item) => item.id);
   const localDepartments = localDepartmentData();
   const departments = Array.isArray(data.departments) && data.departments.length
     ? data.departments
@@ -169,7 +212,10 @@ export function ensureDepartments(data) {
         ...fallback.landing,
         ...(department.landing || {})
       },
-      categoryIds: Array.isArray(department.categoryIds) ? department.categoryIds : []
+      categoryIds: Array.isArray(department.categoryIds) ? department.categoryIds : [],
+      snapshotItems: Array.isArray(department.snapshotItems)
+        ? department.snapshotItems.filter((id) => allSnapshotItems.includes(id))
+        : (fallback.snapshotItems || allSnapshotItems)
     };
   });
 
@@ -247,6 +293,7 @@ export function storagePathFromMedia(item) {
 }
 
 let supportsMediaFileName = true;
+let supportsDepartmentSnapshotItems = true;
 let remoteSyncLoaded = !remoteEnabled();
 let lastRemoteSyncError = null;
 
@@ -267,6 +314,15 @@ function missingFileNameColumn(error) {
   );
 }
 
+function missingDepartmentSnapshotItemsColumn(error) {
+  const message = String(error?.message || "");
+  return message.includes("snapshot_items") && (
+    message.includes("PGRST204") ||
+    message.includes("42703") ||
+    message.toLowerCase().includes("column")
+  );
+}
+
 function missingRemoteTable(error) {
   const message = String(error?.message || "");
   return message.includes("PGRST205") ||
@@ -278,6 +334,11 @@ function missingRemoteTable(error) {
 function mediaRowsForRemote(media) {
   if (supportsMediaFileName) return media;
   return media.map(({ file_name, ...item }) => item);
+}
+
+function departmentRowsWithSupportedColumns(departments) {
+  if (supportsDepartmentSnapshotItems) return departments;
+  return departments.map(({ snapshot_items, ...item }) => item);
 }
 
 function uploadContentType(file) {
@@ -381,6 +442,7 @@ function departmentRowsForRemote(departments) {
     landing_subtitle: department.landing?.subtitle || "",
     landing_hero_image: department.landing?.heroImage || "",
     category_ids: department.categoryIds || [],
+    snapshot_items: department.snapshotItems || [],
     sort_order: index,
     updated_at: new Date().toISOString()
   }));
@@ -395,7 +457,8 @@ function departmentsFromRows(rows) {
       subtitle: row.landing_subtitle || "",
       heroImage: row.landing_hero_image || "images/Columbia Palisades.jpg"
     },
-    categoryIds: Array.isArray(row.category_ids) ? row.category_ids : []
+    categoryIds: Array.isArray(row.category_ids) ? row.category_ids : [],
+    snapshotItems: Array.isArray(row.snapshot_items) ? row.snapshot_items : undefined
   }));
 }
 
@@ -485,7 +548,9 @@ async function fetchRemoteData() {
   if (!remoteEnabled()) return null;
 
   const categoryQuery = "select=id,parent_id,name,sort_order,updated_at&order=sort_order.asc";
-  const departmentQuery = "select=id,name,landing_title,landing_subtitle,landing_hero_image,category_ids,sort_order,updated_at&order=sort_order.asc";
+  const departmentQuery = supportsDepartmentSnapshotItems
+    ? "select=id,name,landing_title,landing_subtitle,landing_hero_image,category_ids,snapshot_items,sort_order,updated_at&order=sort_order.asc"
+    : "select=id,name,landing_title,landing_subtitle,landing_hero_image,category_ids,sort_order,updated_at&order=sort_order.asc";
   const mediaQuery = supportsMediaFileName
     ? "select=id,category_id,name,file_name,url,storage_path,sort_order,updated_at&order=sort_order.asc"
     : "select=id,category_id,name,url,storage_path,sort_order,updated_at&order=sort_order.asc";
@@ -516,9 +581,15 @@ async function fetchRemoteDataWithFallback() {
   try {
     return await fetchRemoteData();
   } catch (error) {
-    if (!supportsMediaFileName || !missingFileNameColumn(error)) throw error;
-    supportsMediaFileName = false;
-    return fetchRemoteData();
+    if (supportsMediaFileName && missingFileNameColumn(error)) {
+      supportsMediaFileName = false;
+      return fetchRemoteDataWithFallback();
+    }
+    if (supportsDepartmentSnapshotItems && missingDepartmentSnapshotItemsColumn(error)) {
+      supportsDepartmentSnapshotItems = false;
+      return fetchRemoteDataWithFallback();
+    }
+    throw error;
   }
 }
 
@@ -549,15 +620,29 @@ export async function pushRemoteData(data) {
   const departments = departmentRowsForRemote(data.departments);
 
   if (departments.length) {
-    await requestJson(tableUrl(SUPABASE_CONFIG.departmentsTable, "on_conflict=id"), {
-      method: "POST",
-      headers: await apiHeaders({
-        admin: true,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates,return=minimal"
-      }),
-      body: JSON.stringify(departments)
-    });
+    try {
+      await requestJson(tableUrl(SUPABASE_CONFIG.departmentsTable, "on_conflict=id"), {
+        method: "POST",
+        headers: await apiHeaders({
+          admin: true,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        }),
+        body: JSON.stringify(departmentRowsWithSupportedColumns(departments))
+      });
+    } catch (error) {
+      if (!supportsDepartmentSnapshotItems || !missingDepartmentSnapshotItemsColumn(error)) throw error;
+      supportsDepartmentSnapshotItems = false;
+      await requestJson(tableUrl(SUPABASE_CONFIG.departmentsTable, "on_conflict=id"), {
+        method: "POST",
+        headers: await apiHeaders({
+          admin: true,
+          "Content-Type": "application/json",
+          Prefer: "resolution=merge-duplicates,return=minimal"
+        }),
+        body: JSON.stringify(departmentRowsWithSupportedColumns(departments))
+      });
+    }
   }
 
   if (categories.length) {

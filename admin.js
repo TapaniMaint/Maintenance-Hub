@@ -1,5 +1,6 @@
 import {
   DEFAULT_DEPARTMENT_ID,
+  LANDING_SNAPSHOT_ITEMS,
   loadData,
   saveData,
   syncFromRemote,
@@ -541,6 +542,7 @@ const elDepartmentName = document.getElementById("departmentNameInput");
 const elDepartmentLandingTitle = document.getElementById("departmentLandingTitleInput");
 const elDepartmentLandingSubtitle = document.getElementById("departmentLandingSubtitleInput");
 const elDepartmentLandingImage = document.getElementById("departmentLandingImageInput");
+const elDepartmentSnapshotList = document.getElementById("departmentSnapshotList");
 const elDepartmentCategorySearch = document.getElementById("departmentCategorySearch");
 const elDepartmentCategoryFilter = document.getElementById("departmentCategoryFilter");
 const elDepartmentCategoryCount = document.getElementById("departmentCategoryCount");
@@ -890,6 +892,7 @@ function renderDepartmentEditor() {
   if (elDepartmentLandingTitle) elDepartmentLandingTitle.value = department.landing?.title || "";
   if (elDepartmentLandingSubtitle) elDepartmentLandingSubtitle.value = department.landing?.subtitle || "";
   if (elDepartmentLandingImage) elDepartmentLandingImage.value = department.landing?.heroImage || "";
+  renderDepartmentSnapshotOptions(department);
 
   if (!elDepartmentCategoryList) return;
   elDepartmentCategoryList.innerHTML = "";
@@ -909,6 +912,27 @@ function renderDepartmentEditor() {
   syncDepartmentCategoryStates();
 }
 
+function renderDepartmentSnapshotOptions(department) {
+  if (!elDepartmentSnapshotList) return;
+
+  const selected = new Set(department.snapshotItems || LANDING_SNAPSHOT_ITEMS.map((item) => item.id));
+  elDepartmentSnapshotList.innerHTML = "";
+  for (const item of LANDING_SNAPSHOT_ITEMS) {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    const text = document.createElement("span");
+
+    input.type = "checkbox";
+    input.value = item.id;
+    input.checked = selected.has(item.id);
+    text.textContent = item.label;
+
+    label.appendChild(input);
+    label.appendChild(text);
+    elDepartmentSnapshotList.appendChild(label);
+  }
+}
+
 function applyDepartmentForm(department) {
   department.name = (elDepartmentName?.value || "").trim() || department.name;
   department.landing = {
@@ -917,6 +941,8 @@ function applyDepartmentForm(department) {
     heroImage: (elDepartmentLandingImage?.value || "").trim() || "images/Columbia Palisades.jpg"
   };
   department.categoryIds = Array.from(new Set(department.categoryIds || []));
+  department.snapshotItems = [...(elDepartmentSnapshotList?.querySelectorAll("input:checked") || [])]
+    .map((input) => input.value);
 }
 
 function renderTree() {
@@ -1281,7 +1307,8 @@ document.getElementById("departmentAddBtn")?.addEventListener("click", async () 
       subtitle: "",
       heroImage: "images/Columbia Palisades.jpg"
     },
-    categoryIds: []
+    categoryIds: [],
+    snapshotItems: LANDING_SNAPSHOT_ITEMS.map((item) => item.id)
   });
   selectedDepartmentId = id;
   if (elDepartmentNewName) elDepartmentNewName.value = "";

@@ -1,4 +1,4 @@
-import { DEFAULT_DEPARTMENT_ID, loadData, findNode, syncFromRemote } from "./app.js";
+import { DEFAULT_DEPARTMENT_ID, LANDING_SNAPSHOT_ITEMS, loadData, findNode, syncFromRemote } from "./app.js";
 import { getUser, onAuthStateChange, signOut } from "./supabase-client.js";
 
 const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
@@ -458,6 +458,7 @@ const elLandingFutureSpace = document.getElementById("landingFutureSpace");
 const landingBrowseBtn = document.getElementById("landingBrowseBtn");
 const elMediaTitle = document.getElementById("mediaTitle");
 const departmentSelect = document.getElementById("departmentSelect");
+const elStatsSection = document.querySelector("[aria-labelledby='statsTitle']");
 
 function readDepartmentId() {
   const param = new URLSearchParams(window.location.search).get("department");
@@ -542,6 +543,21 @@ function applyDepartmentLanding() {
     imageEl.src = heroImage;
     imageEl.alt = `${title} landing image`;
   }
+  applyDepartmentSnapshot(department);
+}
+
+function applyDepartmentSnapshot(department) {
+  const defaultItems = LANDING_SNAPSHOT_ITEMS.map((item) => item.id);
+  const visibleItems = new Set(Array.isArray(department?.snapshotItems) ? department.snapshotItems : defaultItems);
+  let visibleCount = 0;
+
+  document.querySelectorAll("[data-snapshot-item]").forEach((tile) => {
+    const visible = visibleItems.has(tile.dataset.snapshotItem);
+    tile.hidden = !visible;
+    if (visible) visibleCount += 1;
+  });
+
+  if (elStatsSection) elStatsSection.hidden = visibleCount === 0;
 }
 
 function openDepartmentHome(departmentId) {

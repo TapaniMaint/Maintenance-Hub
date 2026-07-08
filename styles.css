@@ -760,6 +760,31 @@ button.danger:hover { border-color: #ff5a5a; }
   font-size: 14px;
 }
 
+.department-admin__snapshot {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.department-admin__snapshot legend {
+  color: var(--muted);
+  font-size: 12px;
+  padding: 0 4px;
+}
+
+.department-admin__snapshot-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.department-admin__snapshot-options label {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+}
+
 .department-admin__category-header {
   align-items: center;
 }
