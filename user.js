@@ -204,6 +204,7 @@ function showLandingPage() {
 }
 
 homeBtn?.addEventListener("click", (event) => {
+  if (pageDepartmentId()) return;
   event.preventDefault();
   showLandingPage();
 });
@@ -463,6 +464,8 @@ const elStatsSection = document.querySelector("[aria-labelledby='statsTitle']");
 function readDepartmentId() {
   const param = new URLSearchParams(window.location.search).get("department");
   if (param) return param;
+  const pageDepartment = pageDepartmentId();
+  if (pageDepartment) return pageDepartment;
 
   try {
     return localStorage.getItem(DEPARTMENT_KEY) || DEFAULT_DEPARTMENT_ID;
@@ -472,7 +475,11 @@ function readDepartmentId() {
 }
 
 function hasDepartmentRoute() {
-  return new URLSearchParams(window.location.search).has("department");
+  return new URLSearchParams(window.location.search).has("department") || !!pageDepartmentId();
+}
+
+function pageDepartmentId() {
+  return document.body?.dataset.departmentId || "";
 }
 
 function saveDepartmentId(id) {
@@ -526,6 +533,7 @@ function renderDepartmentPicker() {
 }
 
 function syncDepartmentUrl() {
+  if (pageDepartmentId()) return;
   const url = new URL(window.location.href);
   url.searchParams.set("department", activeDepartmentId);
   window.history.replaceState({}, "", url);
@@ -881,6 +889,10 @@ elCategorySearch?.addEventListener("input", renderSidebarTree);
 departmentSelect?.addEventListener("change", () => {
   activeDepartmentId = departmentSelect.value || DEFAULT_DEPARTMENT_ID;
   saveDepartmentId(activeDepartmentId);
+  if (pageDepartmentId()) {
+    window.location.assign(`${activeDepartmentId}.html`);
+    return;
+  }
   syncDepartmentUrl();
   showingHomePage = false;
   selectedId = "";

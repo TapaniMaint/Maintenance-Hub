@@ -1,11 +1,190 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tapani Trucking | Service Portal</title>
-  <script>location.replace("/?department=tapani-trucking");</script>
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-  <a href="/?department=tapani-trucking">Tapani Trucking</a>
+
+<body class="page page--user user-page auth-checking" data-department-id="tapani-trucking">
+  <header class="site-header app-header">
+    <div class="app-header__brand-group header-left">
+      <a class="brand app-brand" href="/" aria-label="Equipment Services home">
+        <img class="tapani-logo app-brand__logo" src="images/logo.ico" alt="Tapani logo" />
+        <span class="brand-title app-brand__title">Service Portal</span>
+      </a>
+      <a class="header-home-link app-header__home-link" id="homeBtn" href="/" hidden>Home</a>
+    </div>
+    <nav class="header-actions app-header__actions" aria-label="Primary navigation">
+      <div class="settings-menu settings">
+        <button class="settings-toggle settings__toggle" id="settingsToggleBtn" type="button" aria-label="Settings"
+          aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel">
+          <svg class="setting-icon settings__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.73l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.73v-.51a2 2 0 0 1 1-1.72l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        </button>
+        <div class="settings-panel settings__panel" id="settingsPanel" role="dialog" aria-labelledby="settingsTitle" hidden>
+          <div class="settings-title settings__title" id="settingsTitle">Settings</div>
+          <label class="department-picker settings__department" for="departmentSelect">
+            <span>Department</span>
+            <select id="departmentSelect" class="department-picker__select" aria-label="Department"></select>
+          </label>
+          <fieldset class="theme-options settings__options">
+            <legend>Mode</legend>
+            <label class="theme-option settings__option">
+              <input type="radio" name="themeMode" value="dark" />
+              <span>Dark</span>
+            </label>
+            <label class="theme-option settings__option">
+              <input type="radio" name="themeMode" value="light" />
+              <span>Light</span>
+            </label>
+            <label class="theme-option settings__option">
+              <input type="radio" name="themeMode" value="forest" />
+              <span>Forest</span>
+            </label>
+            <label class="theme-option settings__option">
+              <input type="radio" name="themeMode" value="steel" />
+              <span>Steel</span>
+            </label>
+          </fieldset>
+          <button class="header-button settings-sign-out settings__sign-out" id="userSignOutBtn" type="button" hidden>Sign out</button>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="overlay page__overlay" id="overlay" hidden></div>
+  <button class="iconbtn mobile-menu-toggle page__menu-toggle" id="treeToggleBtn" type="button" aria-controls="sidebar"
+    aria-expanded="false">Menu</button>
+
+  <main class="main portal-layout">
+    <aside class="panel sidebar portal-sidebar" id="sidebar" aria-labelledby="browseTitle">
+      <div class="section-header portal-sidebar__header">
+        <div>
+          <h1 class="panel-title portal-sidebar__title" id="browseTitle">Browse</h1>
+        </div>
+        <div class="sidebar-header-actions portal-sidebar__actions">
+          <button class="sidebar-action-btn portal-sidebar__action" id="collapseTreeBtn" type="button">Refresh</button>
+        </div>
+      </div>
+      <label class="sidebar-search portal-sidebar__search" for="categorySearch">
+        <span class="sr-only">Search categories</span>
+        <input id="categorySearch" type="search" placeholder="Search categories" autocomplete="off" />
+      </label>
+      <nav class="tree category-tree" id="tree" aria-label="Categories"></nav>
+    </aside>
+
+    <section class="panel content portal-content" aria-labelledby="mediaTitle">
+      <section class="home-page" id="homePage" aria-labelledby="homeTitle">
+        <div class="home-page__hero">
+          <h1 id="homeTitle">Service Portal</h1>
+          <p>Choose a department to open the service guides, media, and field references assigned to that team.</p>
+        </div>
+        <div class="home-page__departments" id="homeDepartmentList" aria-label="Departments"></div>
+      </section>
+      <h2 class="panel-title panel-title-spaced portal-content__title" id="mediaTitle">Media</h2>
+      <section class="landing-hero hero" id="landingHero" aria-labelledby="landingTitle">
+        <img class="hero__image" src="images/Columbia Palisades.jpg" alt="Columbia Palisades job site with excavation equipment" />
+        <div class="landing-copy hero__content">
+          <h1 id="landingTitle">Service Portal</h1>
+          <p>Equipment service guide</p>
+          <button class="landing-browse-btn hero__browse-button" id="landingBrowseBtn" type="button">Start Browsing</button>
+        </div>
+      </section>
+      <section class="landing-future-space landing" id="landingFutureSpace" aria-label="Landing page content area">
+        <section class="landing-block landing__section" aria-labelledby="statsTitle">
+          <div class="landing-section-heading landing__heading">
+            <h2 id="statsTitle">Operations Snapshot</h2>
+            <span>Placeholder data</span>
+          </div>
+          <div class="stats-grid stats">
+            <article class="stat-tile stats__item" data-snapshot-item="fuel-pumped-ytd">
+              <span class="stat-label stats__label">Fuel pumped YTD</span>
+              <strong>482,300 gal</strong>
+              <span class="stat-note stats__note">Diesel, DEF, and lube tracking</span>
+            </article>
+            <article class="stat-tile stats__item" data-snapshot-item="pm-services-complete">
+              <span class="stat-label stats__label">PM services complete</span>
+              <strong>1,248</strong>
+              <span class="stat-note stats__note">Year to date</span>
+            </article>
+            <article class="stat-tile stats__item" data-snapshot-item="open-down-units">
+              <span class="stat-label stats__label">Open down units</span>
+              <strong>17</strong>
+              <span class="stat-note stats__note">Awaiting repair or parts</span>
+            </article>
+            <article class="stat-tile stats__item" data-snapshot-item="work-orders-closed">
+              <span class="stat-label stats__label">Work orders closed</span>
+              <strong>3,914</strong>
+              <span class="stat-note stats__note">Shop and field combined</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="landing-block landing__section" aria-labelledby="linksTitle">
+          <div class="landing-section-heading landing__heading">
+            <h2 id="linksTitle">Tech Links</h2>
+            <span>Common portals</span>
+          </div>
+          <div class="tech-links-grid tech-links">
+            <a class="tech-link tech-links__item"
+              href="https://tapaniunderground0-my.sharepoint.com/:x:/r/personal/anatoliyb_tapani_com/_layouts/15/doc2.aspx?sourcedoc=%7BB6A27A8A-95D1-4E5F-80DC-62BF246289D8%7D&file=Maintenance%20Tech%20Schedule.xlsx&action=default&mobileredirect=true&DefaultItemOpen=1&wdOrigin=OFFICECOM-WEB.REDIRECT%2CAPPHOME-WEB.JUMPBACKIN&wdPreviousSession=05777c33-eeaa-4026-a7a4-1c65d3d86b0b&wdPreviousSessionSrc=AppHomeWeb&ct=1771373166781"
+              target="_blank" rel="noopener noreferrer" aria-label="Open maintenance tech schedule">
+              <strong>Maintenance Tech Schedule</strong>
+              <span>Job schedules and assignments</span>
+            </a>
+            <a class="tech-link tech-links__item" href="https://telematics.hcssapps.com/App/Map" target="_blank"
+              rel="noopener noreferrer" aria-label="Open work order system">
+              <strong>HCSS Telematics</strong>
+              <span>Job location and equipment tracking</span>
+            </a>
+            <a class="tech-link tech-links__item" href="#" target="_blank" rel="noopener noreferrer" aria-label="Open fluid reference">
+              <strong>Apparel</strong>
+              <span>Apparel guidelines and reimbursement</span>
+            </a>
+            <a class="tech-link tech-links__item" href="https://chemmanagement.ehs.com/9/1d09b91a-a101-4360-b601-751eedaca277/ebinders"
+              target="_blank" rel="noopener noreferrer" aria-label="Open safety data sheets">
+              <strong>Safety Data Sheets</strong>
+              <span>SDS and chemical references</span>
+            </a>
+
+            <a class="tech-link tech-links__item"
+              href="https://tapaniunderground0.sharepoint.com/sites/TapaniIntranet/Intranet%20documents/Forms/AllItems.aspx?id=%2Fsites%2FTapaniIntranet%2FIntranet%20documents%2FBattle%20Ground%20Site%20Directory%2Epdf&parent=%2Fsites%2FTapaniIntranet%2FIntranet%20documents&p=true&ga=1"
+              target="_blank" rel="noopener noreferrer" aria-label="Open inspection forms">
+              <strong>Site Directory</strong>
+              <span>Battle Ground shop map</span>
+            </a>
+            <a class="tech-link tech-links__item" href="https://chemmanagement.ehs.com" target="_blank" rel="noopener noreferrer"
+              aria-label="Open OEM service portal">
+              <strong>Phone Directory List</strong>
+              <span>TU & TT Company Cell Phone List</span>
+            </a>
+          </div>
+        </section>
+      </section>
+      <div class="gallery media-grid" id="gallery"></div>
+      <p class="small portal-content__hint" id="imgHint"></p>
+    </section>
+  </main>
+
+  <div class="lightbox media-viewer" id="lightbox" role="dialog" aria-modal="true" aria-label="Media preview" hidden>
+    <button class="lightbox-close media-viewer__close" id="lightboxCloseBtn" type="button" aria-label="Close media preview">X</button>
+    <div class="frame media-viewer__frame">
+      <img id="lightboxImg" alt="" />
+      <video id="lightboxVideo" controls></video>
+    </div>
+    <p class="caption media-viewer__caption" id="lightboxCaption"></p>
+  </div>
+
+  <script src="vendor/supabase.js"></script>
+  <script type="module" src="user.js"></script>
 </body>
+
 </html>
+
