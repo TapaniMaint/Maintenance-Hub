@@ -793,6 +793,7 @@ function renderImagesOnly() {
 
   document.body.classList.toggle("home-visible", showHome);
   syncSidebarState();
+  if (homeBtn) homeBtn.hidden = showHome;
   if (elHomePage) elHomePage.hidden = !showHome;
   if (elLandingHero) elLandingHero.hidden = !showLanding;
   if (elLandingFutureSpace) elLandingFutureSpace.hidden = !showLanding;
