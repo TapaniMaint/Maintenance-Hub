@@ -49,21 +49,21 @@ function defaultData() {
       images: [],
       children: [
         {
-          id: uid(),
+          id: "excavator",
           name: "Excavator",
           images: [],
           children: [
             {
-              id: uid(),
+              id: "excavator-caterpillar",
               name: "Caterpillar",
               images: [],
               children: [
                 {
-                  id: uid(),
+                  id: "excavator-caterpillar-336",
                   name: "336",
                   images: [],
                   children: [
-                    { id: uid(), name: "Engine", images: [], children: [] }
+                    { id: "excavator-caterpillar-336-engine", name: "Engine", images: [], children: [] }
                   ]
                 }
               ]
@@ -71,36 +71,36 @@ function defaultData() {
           ]
         },
         {
-          id: uid(),
+          id: "dozer",
           name: "Dozer",
           images: [],
           children: [
             {
-              id: uid(),
+              id: "dozer-caterpillar",
               name: "Caterpillar",
               images: [],
               children: [
                 {
-                  id: uid(),
+                  id: "dozer-caterpillar-d6",
                   name: "D6",
                   images: [],
                   children: [
-                    { id: uid(), name: "Engine", images: [], children: [] }
+                    { id: "dozer-caterpillar-d6-engine", name: "Engine", images: [], children: [] }
                   ]
                 }
               ]
             },
             {
-              id: uid(),
+              id: "dozer-komatsu",
               name: "Komatsu",
               images: [],
               children: [
                 {
-                  id: uid(),
+                  id: "dozer-komatsu-d61",
                   name: "D61",
                   images: [],
                   children: [
-                    { id: uid(), name: "Engine", images: [], children: [] }
+                    { id: "dozer-komatsu-d61-engine", name: "Engine", images: [], children: [] }
                   ]
                 }
               ]
@@ -127,6 +127,10 @@ function categoryIds(root) {
 
   visit(root);
   return ids;
+}
+
+function categoryIdSet(root) {
+  return new Set(categoryIds(root));
 }
 
 function defaultDepartments(root) {
@@ -194,6 +198,7 @@ export function ensureDepartments(data) {
   const defaults = defaultDepartments(data.root);
   const byDefaultId = new Map(defaults.map((department) => [department.id, department]));
   const allSnapshotItems = LANDING_SNAPSHOT_ITEMS.map((item) => item.id);
+  const validCategoryIds = categoryIdSet(data.root);
   const localDepartments = localDepartmentData();
   const sourceDepartments = Array.isArray(data.departments) && data.departments.length
     ? data.departments
@@ -202,6 +207,8 @@ export function ensureDepartments(data) {
 
   data.departments = (departments.length ? departments : defaults).map((department) => {
     const fallback = byDefaultId.get(department.id) || defaults[0];
+    const categoryIds = Array.isArray(department.categoryIds) ? department.categoryIds : [];
+    const validDepartmentCategoryIds = categoryIds.filter((id) => validCategoryIds.has(id));
     return {
       id: department.id || fallback.id,
       name: department.name || fallback.name,
@@ -209,7 +216,9 @@ export function ensureDepartments(data) {
         ...fallback.landing,
         ...(department.landing || {})
       },
-      categoryIds: Array.isArray(department.categoryIds) ? department.categoryIds : [],
+      categoryIds: categoryIds.length && !validDepartmentCategoryIds.length
+        ? fallback.categoryIds
+        : validDepartmentCategoryIds,
       snapshotItems: Array.isArray(department.snapshotItems)
         ? department.snapshotItems.filter((id) => allSnapshotItems.includes(id))
         : (fallback.snapshotItems || allSnapshotItems)
