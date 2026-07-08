@@ -925,14 +925,15 @@ userSignOutBtn?.addEventListener("click", async () => {
 });
 
 onAuthStateChange((session) => {
-  if (!session?.user) redirectToLogin();
+  if (!session?.user && userSignOutBtn) userSignOutBtn.hidden = true;
 });
 
 async function startUserPortal() {
   try {
     const user = await getUser();
     if (!user) {
-      redirectToLogin();
+      document.body.classList.remove("auth-checking");
+      renderAll();
       return;
     }
 
@@ -942,7 +943,8 @@ async function startUserPortal() {
     if (!loadedRemoteData) renderAll();
   } catch (error) {
     console.warn("Unable to verify user session.", error);
-    redirectToLogin();
+    document.body.classList.remove("auth-checking");
+    renderAll();
   }
 }
 

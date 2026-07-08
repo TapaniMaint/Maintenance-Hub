@@ -9,14 +9,14 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 
-<body class="page page--user user-page auth-checking" data-department-id="mechanics">
+<body class="page page--user user-page" data-department-id="mechanics">
   <header class="site-header app-header">
     <div class="app-header__brand-group header-left">
       <a class="brand app-brand" href="/" aria-label="Equipment Services home">
         <img class="tapani-logo app-brand__logo" src="images/logo.ico" alt="Tapani logo" />
         <span class="brand-title app-brand__title">Service Portal</span>
       </a>
-      <a class="header-home-link app-header__home-link" id="homeBtn" href="/" hidden>Home</a>
+      <a class="header-home-link app-header__home-link" id="homeBtn" href="/">Home</a>
     </div>
     <nav class="header-actions app-header__actions" aria-label="Primary navigation">
       <div class="settings-menu settings">
@@ -81,7 +81,7 @@
     </aside>
 
     <section class="panel content portal-content" aria-labelledby="mediaTitle">
-      <section class="home-page" id="homePage" aria-labelledby="homeTitle">
+      <section class="home-page" id="homePage" aria-labelledby="homeTitle" hidden>
         <div class="home-page__hero">
           <h1 id="homeTitle">Service Portal</h1>
           <p>Choose a department to open the service guides, media, and field references assigned to that team.</p>
