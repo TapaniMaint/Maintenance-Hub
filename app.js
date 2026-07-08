@@ -140,7 +140,7 @@ function defaultDepartments(root) {
         title: "Mechanics",
         subtitle: "Service guides, repair media, and PM references."
       },
-      categoryIds: categoryIds(root),
+      categoryIds: [],
       snapshotItems: ["open-down-units", "work-orders-closed"]
     },
     {
