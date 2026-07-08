@@ -554,17 +554,13 @@ function applyDepartmentLanding() {
   const landing = department?.landing || {};
   const title = landing.title || department?.name || "Service Portal";
   const subtitle = landing.subtitle || "Equipment service guide";
-  const heroImage = landing.heroImage || "images/Columbia Palisades.jpg";
   const titleEl = document.getElementById("landingTitle");
   const subtitleEl = elLandingHero?.querySelector(".hero__content p");
   const imageEl = elLandingHero?.querySelector(".hero__image");
 
   if (titleEl) titleEl.textContent = title;
   if (subtitleEl) subtitleEl.textContent = subtitle;
-  if (imageEl) {
-    imageEl.src = heroImage;
-    imageEl.alt = `${title} landing image`;
-  }
+  if (imageEl) imageEl.alt = `${title} landing image`;
   applyDepartmentSnapshot(department);
 }
 

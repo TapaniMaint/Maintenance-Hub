@@ -540,7 +540,6 @@ const elDepartmentSelect = document.getElementById("departmentAdminSelect");
 const elDepartmentName = document.getElementById("departmentNameInput");
 const elDepartmentLandingTitle = document.getElementById("departmentLandingTitleInput");
 const elDepartmentLandingSubtitle = document.getElementById("departmentLandingSubtitleInput");
-const elDepartmentLandingImage = document.getElementById("departmentLandingImageInput");
 const elDepartmentSnapshotList = document.getElementById("departmentSnapshotList");
 const elDepartmentCategorySearch = document.getElementById("departmentCategorySearch");
 const elDepartmentCategoryFilter = document.getElementById("departmentCategoryFilter");
@@ -881,7 +880,6 @@ function renderDepartmentEditor() {
   if (elDepartmentName) elDepartmentName.value = department.name || "";
   if (elDepartmentLandingTitle) elDepartmentLandingTitle.value = department.landing?.title || "";
   if (elDepartmentLandingSubtitle) elDepartmentLandingSubtitle.value = department.landing?.subtitle || "";
-  if (elDepartmentLandingImage) elDepartmentLandingImage.value = department.landing?.heroImage || "";
   renderDepartmentSnapshotOptions(department);
 
   if (!elDepartmentCategoryList) return;
@@ -927,8 +925,7 @@ function applyDepartmentForm(department) {
   department.name = (elDepartmentName?.value || "").trim() || department.name;
   department.landing = {
     title: (elDepartmentLandingTitle?.value || "").trim() || department.name,
-    subtitle: (elDepartmentLandingSubtitle?.value || "").trim(),
-    heroImage: (elDepartmentLandingImage?.value || "").trim() || "images/Columbia Palisades.jpg"
+    subtitle: (elDepartmentLandingSubtitle?.value || "").trim()
   };
   department.categoryIds = Array.from(new Set(department.categoryIds || []));
   department.snapshotItems = [...(elDepartmentSnapshotList?.querySelectorAll("input:checked") || [])]

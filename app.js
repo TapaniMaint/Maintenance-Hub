@@ -138,8 +138,7 @@ function defaultDepartments(root) {
       name: "Mechanics",
       landing: {
         title: "Mechanics",
-        subtitle: "Service guides, repair media, and PM references.",
-        heroImage: "images/Tapani Inc Civil Site.jpg"
+        subtitle: "Service guides, repair media, and PM references."
       },
       categoryIds: categoryIds(root),
       snapshotItems: ["open-down-units", "work-orders-closed"]
@@ -149,8 +148,7 @@ function defaultDepartments(root) {
       name: "Crew Truck",
       landing: {
         title: "Crew Truck",
-        subtitle: "Truck setup, daily checks, and field references.",
-        heroImage: "images/Crew Truck.jpg"
+        subtitle: "Truck setup, daily checks, and field references."
       },
       categoryIds: [],
       snapshotItems: allSnapshotItems
@@ -160,8 +158,7 @@ function defaultDepartments(root) {
       name: "Maintenance Tech",
       landing: {
         title: "Maintenance Tech",
-        subtitle: "Maintenance schedules, service references, and technician resources.",
-        heroImage: "images/Maint Tech.jpg"
+        subtitle: "Maintenance schedules, service references, and technician resources."
       },
       categoryIds: [],
       snapshotItems: allSnapshotItems
@@ -171,8 +168,7 @@ function defaultDepartments(root) {
       name: "Tapani Trucking",
       landing: {
         title: "Tapani Trucking",
-        subtitle: "Maintenance schedules, service references, and technician resources.",
-        heroImage: "images/Tapani Trucking.jpg"
+        subtitle: "Maintenance schedules, service references, and technician resources."
       },
       categoryIds: [],
       snapshotItems: allSnapshotItems
@@ -441,7 +437,6 @@ function departmentRowsForRemote(departments) {
     name: department.name || department.id,
     landing_title: department.landing?.title || department.name || "",
     landing_subtitle: department.landing?.subtitle || "",
-    landing_hero_image: department.landing?.heroImage || "",
     category_ids: department.categoryIds || [],
     snapshot_items: department.snapshotItems || [],
     sort_order: index,
@@ -455,8 +450,7 @@ function departmentsFromRows(rows) {
     name: row.name,
     landing: {
       title: row.landing_title || row.name,
-      subtitle: row.landing_subtitle || "",
-      heroImage: row.landing_hero_image || "images/Columbia Palisades.jpg"
+      subtitle: row.landing_subtitle || ""
     },
     categoryIds: Array.isArray(row.category_ids) ? row.category_ids : [],
     snapshotItems: Array.isArray(row.snapshot_items) ? row.snapshot_items : undefined
@@ -550,8 +544,8 @@ async function fetchRemoteData() {
 
   const categoryQuery = "select=id,parent_id,name,sort_order,updated_at&order=sort_order.asc";
   const departmentQuery = supportsDepartmentSnapshotItems
-    ? "select=id,name,landing_title,landing_subtitle,landing_hero_image,category_ids,snapshot_items,sort_order,updated_at&order=sort_order.asc"
-    : "select=id,name,landing_title,landing_subtitle,landing_hero_image,category_ids,sort_order,updated_at&order=sort_order.asc";
+    ? "select=id,name,landing_title,landing_subtitle,category_ids,snapshot_items,sort_order,updated_at&order=sort_order.asc"
+    : "select=id,name,landing_title,landing_subtitle,category_ids,sort_order,updated_at&order=sort_order.asc";
   const mediaQuery = supportsMediaFileName
     ? "select=id,category_id,name,file_name,url,storage_path,sort_order,updated_at&order=sort_order.asc"
     : "select=id,category_id,name,url,storage_path,sort_order,updated_at&order=sort_order.asc";
