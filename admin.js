@@ -1,6 +1,5 @@
 import {
   DEFAULT_DEPARTMENT_ID,
-  LANDING_SNAPSHOT_ITEMS,
   loadData,
   saveData,
   syncFromRemote,
@@ -67,6 +66,7 @@ const treeToggleBtn = document.getElementById("treeToggleBtn");
 const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 const sidebar = document.getElementById("sidebar");
+const exportBackupBtn = document.getElementById("exportBackupBtn");
 const collapseTreeBtn = document.getElementById("collapseTreeBtn");
 const settingsToggleBtn = document.getElementById("settingsToggleBtn");
 const settingsPanel = document.getElementById("settingsPanel");
@@ -203,6 +203,7 @@ collapseTreeBtn?.addEventListener("click", () => {
   saveExpanded();
   renderTree();
 });
+exportBackupBtn?.addEventListener("click", exportBackup);
 window.addEventListener("resize", () => {
   if (!isSidebarDrawer()) closeSidebar();
   else syncSidebarState();
@@ -511,6 +512,24 @@ function showError(error, message) {
   setStatus(message, "error");
 }
 
+function exportBackup() {
+  try {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `maintenance-hub-backup-${stamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    setStatus("Backup exported.", "success");
+  } catch (error) {
+    showError(error, "Unable to export backup.");
+  }
+}
+
 function setAdminEnabledState(enabled) {
   adminEnabled = enabled;
   adminWorkspace?.classList.toggle("hidden", !enabled);
@@ -543,7 +562,6 @@ const elDepartmentSelect = document.getElementById("departmentAdminSelect");
 const elDepartmentName = document.getElementById("departmentNameInput");
 const elDepartmentLandingTitle = document.getElementById("departmentLandingTitleInput");
 const elDepartmentLandingSubtitle = document.getElementById("departmentLandingSubtitleInput");
-const elDepartmentSnapshotList = document.getElementById("departmentSnapshotList");
 const elDepartmentCategorySearch = document.getElementById("departmentCategorySearch");
 const elDepartmentCategoryFilter = document.getElementById("departmentCategoryFilter");
 const elDepartmentCategoryCount = document.getElementById("departmentCategoryCount");
@@ -883,7 +901,6 @@ function renderDepartmentEditor() {
   if (elDepartmentName) elDepartmentName.value = department.name || "";
   if (elDepartmentLandingTitle) elDepartmentLandingTitle.value = department.landing?.title || "";
   if (elDepartmentLandingSubtitle) elDepartmentLandingSubtitle.value = department.landing?.subtitle || "";
-  renderDepartmentSnapshotOptions(department);
 
   if (!elDepartmentCategoryList) return;
   elDepartmentCategoryList.innerHTML = "";
@@ -903,27 +920,6 @@ function renderDepartmentEditor() {
   syncDepartmentCategoryStates();
 }
 
-function renderDepartmentSnapshotOptions(department) {
-  if (!elDepartmentSnapshotList) return;
-
-  const selected = new Set(department.snapshotItems || LANDING_SNAPSHOT_ITEMS.map((item) => item.id));
-  elDepartmentSnapshotList.innerHTML = "";
-  for (const item of LANDING_SNAPSHOT_ITEMS) {
-    const label = document.createElement("label");
-    const input = document.createElement("input");
-    const text = document.createElement("span");
-
-    input.type = "checkbox";
-    input.value = item.id;
-    input.checked = selected.has(item.id);
-    text.textContent = item.label;
-
-    label.appendChild(input);
-    label.appendChild(text);
-    elDepartmentSnapshotList.appendChild(label);
-  }
-}
-
 function applyDepartmentForm(department) {
   department.name = (elDepartmentName?.value || "").trim() || department.name;
   department.landing = {
@@ -931,8 +927,6 @@ function applyDepartmentForm(department) {
     subtitle: (elDepartmentLandingSubtitle?.value || "").trim()
   };
   department.categoryIds = Array.from(new Set(department.categoryIds || []));
-  department.snapshotItems = [...(elDepartmentSnapshotList?.querySelectorAll("input:checked") || [])]
-    .map((input) => input.value);
 }
 
 function renderTree() {
