@@ -21,7 +21,7 @@ let activeDepartmentId = readDepartmentId();
 let selectedId = "";
 let expanded = loadExpanded();
 let hasBrowsedMedia = false;
-let showingHomePage = true;
+let showingHomePage = !hasDepartmentRoute();
 
 function applyRemote(next) {
   data = next;
@@ -471,6 +471,10 @@ function readDepartmentId() {
   }
 }
 
+function hasDepartmentRoute() {
+  return new URLSearchParams(window.location.search).has("department");
+}
+
 function saveDepartmentId(id) {
   try {
     localStorage.setItem(DEPARTMENT_KEY, id);
@@ -577,10 +581,9 @@ function renderHomePage() {
 
   elHomeDepartmentList.innerHTML = "";
   for (const department of data.departments || []) {
-    const button = document.createElement("button");
-    button.type = "button";
+    const button = document.createElement("a");
+    button.href = `${department.id}.html`;
     button.className = "home-department-card";
-    button.addEventListener("click", () => openDepartmentHome(department.id));
 
     const title = document.createElement("strong");
     title.textContent = department.name;
