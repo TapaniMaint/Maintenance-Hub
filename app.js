@@ -598,19 +598,21 @@ async function fetchRemoteDataWithFallback() {
 }
 
 export async function syncFromRemote(onUpdate) {
-  if (!remoteEnabled()) return;
+  if (!remoteEnabled()) return false;
   try {
     const remoteData = await fetchRemoteDataWithFallback();
     remoteSyncLoaded = true;
     lastRemoteSyncError = null;
-    if (!remoteData) return;
+    if (!remoteData) return false;
 
     setLocalDataRaw(remoteData);
     if (typeof onUpdate === "function") onUpdate(remoteData);
+    return true;
   } catch (error) {
     remoteSyncLoaded = false;
     lastRemoteSyncError = error;
     console.warn("Unable to sync from Supabase.", error);
+    return false;
   }
 }
 

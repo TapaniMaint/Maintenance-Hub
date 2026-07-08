@@ -941,8 +941,8 @@ async function startUserPortal() {
 
     if (userSignOutBtn) userSignOutBtn.hidden = false;
     document.body.classList.remove("auth-checking");
-    renderAll();
-    await syncFromRemote(applyRemote);
+    const loadedRemoteData = await syncFromRemote(applyRemote);
+    if (!loadedRemoteData) renderAll();
   } catch (error) {
     console.warn("Unable to verify user session.", error);
     redirectToLogin();
