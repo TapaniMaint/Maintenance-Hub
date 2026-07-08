@@ -550,6 +550,11 @@ function syncDepartmentUrl() {
 }
 
 function applyDepartmentLanding() {
+  if (pageDepartmentId()) {
+    applyDepartmentSnapshot(activeDepartment());
+    return;
+  }
+
   const department = activeDepartment();
   const landing = department?.landing || {};
   const title = landing.title || department?.name || "Service Portal";
