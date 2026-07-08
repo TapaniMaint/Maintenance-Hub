@@ -593,26 +593,18 @@ function openDepartmentHome(departmentId) {
 function renderHomePage() {
   if (!elHomeDepartmentList) return;
 
-  elHomeDepartmentList.innerHTML = "";
   for (const department of data.departments || []) {
-    const button = document.createElement("a");
-    button.href = departmentHref(department.id);
-    button.className = "home-department-card";
-
-    const title = document.createElement("strong");
-    title.textContent = department.name;
-
-    const subtitle = document.createElement("span");
-    subtitle.textContent = department.landing?.subtitle || "Open department resources.";
-
-    const count = document.createElement("small");
+    const card = elHomeDepartmentList.querySelector(`[data-department-card="${CSS.escape(department.id)}"]`);
+    if (!card) continue;
     const categoryCount = department.categoryIds?.length || 0;
-    count.textContent = categoryCount === 1 ? "1 category" : `${categoryCount} categories`;
+    const title = card.querySelector("strong");
+    const subtitle = card.querySelector("span");
+    const count = card.querySelector("small");
 
-    button.appendChild(title);
-    button.appendChild(subtitle);
-    button.appendChild(count);
-    elHomeDepartmentList.appendChild(button);
+    card.href = departmentHref(department.id);
+    if (title) title.textContent = department.name;
+    if (subtitle) subtitle.textContent = department.landing?.subtitle || "Open department resources.";
+    if (count) count.textContent = categoryCount === 1 ? "1 category" : `${categoryCount} categories`;
   }
 }
 
