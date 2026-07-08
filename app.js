@@ -199,11 +199,12 @@ export function ensureDepartments(data) {
   const byDefaultId = new Map(defaults.map((department) => [department.id, department]));
   const allSnapshotItems = LANDING_SNAPSHOT_ITEMS.map((item) => item.id);
   const localDepartments = localDepartmentData();
-  const departments = Array.isArray(data.departments) && data.departments.length
+  const sourceDepartments = Array.isArray(data.departments) && data.departments.length
     ? data.departments
     : (localDepartments.departments.length ? localDepartments.departments : defaults);
+  const departments = sourceDepartments.filter((department) => byDefaultId.has(department.id));
 
-  data.departments = departments.map((department) => {
+  data.departments = (departments.length ? departments : defaults).map((department) => {
     const fallback = byDefaultId.get(department.id) || defaults[0];
     return {
       id: department.id || fallback.id,

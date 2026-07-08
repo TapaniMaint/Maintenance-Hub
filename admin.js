@@ -537,7 +537,6 @@ const elImgUrlInput = document.getElementById("imgUrlInput");
 const elImgUrlName = document.getElementById("imgUrlName");
 const elAddMasterInput = document.getElementById("addMasterInput");
 const elDepartmentSelect = document.getElementById("departmentAdminSelect");
-const elDepartmentNewName = document.getElementById("departmentNewName");
 const elDepartmentName = document.getElementById("departmentNameInput");
 const elDepartmentLandingTitle = document.getElementById("departmentLandingTitleInput");
 const elDepartmentLandingSubtitle = document.getElementById("departmentLandingSubtitleInput");
@@ -731,15 +730,6 @@ function syncClearMediaButton() {
   const count = selectedMediaKeys.size;
   elClearImagesBtn.disabled = count === 0;
   elClearImagesBtn.textContent = count === 0 ? "Delete selected media" : `Delete selected media (${count})`;
-}
-
-function slugFromName(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    || `department-${Date.now().toString(36)}`;
 }
 
 function currentDepartment() {
@@ -1284,35 +1274,6 @@ signOutBtn?.addEventListener("click", async () => {
 elDepartmentSelect?.addEventListener("change", () => {
   selectedDepartmentId = elDepartmentSelect.value || data.defaultDepartmentId || DEFAULT_DEPARTMENT_ID;
   renderDepartmentEditor();
-});
-
-document.getElementById("departmentAddBtn")?.addEventListener("click", async () => {
-  const name = (elDepartmentNewName?.value || "").trim();
-  if (!name) return;
-
-  const existingIds = new Set((data.departments || []).map((department) => department.id));
-  let id = slugFromName(name);
-  let suffix = 2;
-  while (existingIds.has(id)) {
-    id = `${slugFromName(name)}-${suffix}`;
-    suffix += 1;
-  }
-
-  data.departments = data.departments || [];
-  data.departments.push({
-    id,
-    name,
-    landing: {
-      title: name,
-      subtitle: "",
-      heroImage: "images/Columbia Palisades.jpg"
-    },
-    categoryIds: [],
-    snapshotItems: LANDING_SNAPSHOT_ITEMS.map((item) => item.id)
-  });
-  selectedDepartmentId = id;
-  if (elDepartmentNewName) elDepartmentNewName.value = "";
-  await persistData();
 });
 
 document.getElementById("departmentSaveBtn")?.addEventListener("click", async () => {
