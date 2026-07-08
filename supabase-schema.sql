@@ -109,7 +109,7 @@ drop policy if exists "Authenticated read categories" on public.categories;
 create policy "Authenticated read categories"
   on public.categories for select
   to authenticated
-  using (private.has_app_role(array['admin', 'technician', 'portal_user']));
+  using (true);
 
 drop policy if exists "Admin write categories" on public.categories;
 create policy "Admin write categories"
@@ -123,7 +123,7 @@ drop policy if exists "Authenticated read media" on public.media;
 create policy "Authenticated read media"
   on public.media for select
   to authenticated
-  using (private.has_app_role(array['admin', 'technician', 'portal_user']));
+  using (true);
 
 drop policy if exists "Admin write media" on public.media;
 create policy "Admin write media"
@@ -136,7 +136,7 @@ drop policy if exists "Authenticated read departments" on public.departments;
 create policy "Authenticated read departments"
   on public.departments for select
   to authenticated
-  using (private.has_app_role(array['admin', 'technician', 'portal_user']));
+  using (true);
 
 drop policy if exists "Admin write departments" on public.departments;
 create policy "Admin write departments"
@@ -175,7 +175,6 @@ create policy "Authenticated read maintenance media files"
   to authenticated
   using (
     bucket_id = 'maintenance-media'
-    and private.has_app_role(array['admin', 'technician', 'portal_user'])
   );
 
 drop policy if exists "Admin insert maintenance media files" on storage.objects;
