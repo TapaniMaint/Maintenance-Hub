@@ -28,6 +28,7 @@ const staticFiles = [
   "login.js",
   "maintenance-tech.html",
   "mechanics.html",
+  "portal-auth.js",
   "styles.css",
   "supabase-client.js",
   "supabase-config.js",

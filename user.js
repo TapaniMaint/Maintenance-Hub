@@ -932,19 +932,17 @@ async function startUserPortal() {
   try {
     const user = await getUser();
     if (!user) {
-      document.body.classList.remove("auth-checking");
-      renderAll();
+      redirectToLogin();
       return;
     }
 
     if (userSignOutBtn) userSignOutBtn.hidden = false;
-    document.body.classList.remove("auth-checking");
     const loadedRemoteData = await syncFromRemote(applyRemote);
+    document.body.classList.remove("auth-checking");
     if (!loadedRemoteData) renderAll();
   } catch (error) {
     console.warn("Unable to verify user session.", error);
-    document.body.classList.remove("auth-checking");
-    renderAll();
+    redirectToLogin();
   }
 }
 
