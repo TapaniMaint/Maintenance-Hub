@@ -15,6 +15,12 @@ const ALLOWED_MEDIA_HOST_SUFFIXES = [
   ".onedrive.live.com",
   ".1drv.com"
 ];
+const DEPARTMENT_PAGES = new Map([
+  ["mechanics", "mechanics.html"],
+  ["crew-truck", "crew-truck.html"],
+  ["maintenance-tech", "maintenance-tech.html"],
+  ["tapani-trucking", "tapani-trucking.html"]
+]);
 
 let data = loadData();
 let activeDepartmentId = readDepartmentId();
@@ -482,6 +488,10 @@ function pageDepartmentId() {
   return document.body?.dataset.departmentId || "";
 }
 
+function departmentHref(id) {
+  return DEPARTMENT_PAGES.get(id) || `/?department=${encodeURIComponent(id)}`;
+}
+
 function saveDepartmentId(id) {
   try {
     localStorage.setItem(DEPARTMENT_KEY, id);
@@ -590,7 +600,7 @@ function renderHomePage() {
   elHomeDepartmentList.innerHTML = "";
   for (const department of data.departments || []) {
     const button = document.createElement("a");
-    button.href = `${department.id}.html`;
+    button.href = departmentHref(department.id);
     button.className = "home-department-card";
 
     const title = document.createElement("strong");
@@ -890,7 +900,7 @@ departmentSelect?.addEventListener("change", () => {
   activeDepartmentId = departmentSelect.value || DEFAULT_DEPARTMENT_ID;
   saveDepartmentId(activeDepartmentId);
   if (pageDepartmentId()) {
-    window.location.assign(`${activeDepartmentId}.html`);
+    window.location.assign(departmentHref(activeDepartmentId));
     return;
   }
   syncDepartmentUrl();

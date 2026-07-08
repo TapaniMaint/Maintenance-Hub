@@ -22,12 +22,16 @@ const staticFiles = [
   "admin.html",
   "admin.js",
   "app.js",
+  "crew-truck.html",
   "index.html",
   "login.html",
   "login.js",
+  "maintenance-tech.html",
+  "mechanics.html",
   "styles.css",
   "supabase-client.js",
   "supabase-config.js",
+  "tapani-trucking.html",
   "theme.js",
   "user.js"
 ];
