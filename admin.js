@@ -7,7 +7,8 @@ import {
   countDescendants,
   removeNodeById,
   uploadMediaFile,
-  alignMediaStoragePaths
+  alignMediaStoragePaths,
+  mediaUrlForDisplay
 } from "./app.js";
 import {
   getUser,
@@ -44,6 +45,7 @@ let expanded = loadExpanded();
 let adminEnabled = false;
 let selectedMediaKeys = new Set();
 let departmentCategoryExpanded = new Set();
+let mediaRenderToken = 0;
 
 const authForm = document.getElementById("authForm");
 const adminWorkspace = document.getElementById("adminWorkspace");
@@ -462,7 +464,7 @@ function safeMediaUrl(value) {
 }
 
 function mediaTypeFor(item, src = "") {
-  const value = `${item?.name || ""} ${src || item?.url || item?.dataUrl || ""}`.toLowerCase();
+  const value = `${item?.name || ""} ${item?.fileName || ""} ${item?.storagePath || ""} ${src || item?.url || item?.dataUrl || ""}`.toLowerCase();
   if (value.startsWith("data:video/") || /\.(mp4|mov|webm|ogv)(?:[?#]|$)/i.test(value)) return "video";
   return "image";
 }
@@ -1038,7 +1040,8 @@ function renderNodeRow(node, depth) {
   }
 }
 
-function renderSelectedPanel() {
+async function renderSelectedPanel() {
+  const renderToken = ++mediaRenderToken;
   const found = findNode(data.root, selectedId);
   if (!found) return;
 
@@ -1058,9 +1061,10 @@ function renderSelectedPanel() {
     return;
   }
 
-  imgs.forEach((img, index) => {
-    const src = safeMediaUrl(img.url || img.dataUrl || "");
-    if (!src) return;
+  for (const [index, img] of imgs.entries()) {
+    const src = safeMediaUrl(await mediaUrlForDisplay(img));
+    if (renderToken !== mediaRenderToken || selectedId !== node.id) return;
+    if (!src) continue;
     const mediaType = mediaTypeFor(img, src);
     const mediaName = displayMediaName(img, mediaType);
     const key = mediaSelectionKey(img, index);
@@ -1166,7 +1170,7 @@ function renderSelectedPanel() {
     card.appendChild(media);
     card.appendChild(cap);
     elGallery.appendChild(card);
-  });
+  }
 
   const currentKeys = new Set(imgs.map((img, index) => mediaSelectionKey(img, index)));
   selectedMediaKeys = new Set([...selectedMediaKeys].filter((key) => currentKeys.has(key)));

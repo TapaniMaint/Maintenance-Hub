@@ -281,6 +281,31 @@ async function signedStorageUrl(path) {
   return data?.signedUrl || "";
 }
 
+export async function mediaUrlForDisplay(item) {
+  const directUrl = item?.url || item?.dataUrl || "";
+  if (directUrl) return directUrl;
+
+  const path = item?.storagePath || "";
+  if (!path) return "";
+
+  const cached = signedMediaUrlCache.get(path);
+  if (cached && cached.expiresAt > Date.now()) return cached.url;
+
+  try {
+    const url = await signedStorageUrl(path);
+    if (url) {
+      signedMediaUrlCache.set(path, {
+        url,
+        expiresAt: Date.now() + ((SIGNED_MEDIA_URL_TTL_SECONDS - 60) * 1000)
+      });
+    }
+    return url;
+  } catch (error) {
+    console.warn("Unable to load media URL.", error);
+    return "";
+  }
+}
+
 export function storagePathFromMedia(item) {
   if (item?.storagePath) return item.storagePath;
   const value = item?.url || item?.dataUrl || "";
@@ -302,6 +327,7 @@ let supportsMediaFileName = true;
 let supportsDepartmentSnapshotItems = true;
 let remoteSyncLoaded = !remoteEnabled();
 let lastRemoteSyncError = null;
+const signedMediaUrlCache = new Map();
 
 export function hasRemoteSyncLoaded() {
   return !remoteEnabled() || remoteSyncLoaded;
@@ -480,7 +506,7 @@ async function buildTree(categories, media, departments = []) {
       id: item.id,
       name: item.name,
       fileName: item.file_name || "",
-      url: item.url || (item.storage_path ? await signedStorageUrl(item.storage_path) : ""),
+      url: item.url || "",
       storagePath: item.storage_path || ""
     });
   }

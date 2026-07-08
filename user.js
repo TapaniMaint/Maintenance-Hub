@@ -1,4 +1,4 @@
-import { DEFAULT_DEPARTMENT_ID, LANDING_SNAPSHOT_ITEMS, loadData, findNode, syncFromRemote } from "./app.js";
+import { DEFAULT_DEPARTMENT_ID, LANDING_SNAPSHOT_ITEMS, loadData, findNode, syncFromRemote, mediaUrlForDisplay } from "./app.js";
 import { getUser, onAuthStateChange, signOut } from "./supabase-client.js";
 
 const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
@@ -28,6 +28,7 @@ let selectedId = "";
 let expanded = loadExpanded();
 let hasBrowsedMedia = false;
 let showingHomePage = !hasDepartmentRoute();
+let mediaRenderToken = 0;
 
 function applyRemote(next) {
   data = next;
@@ -767,7 +768,7 @@ function safeMediaUrl(value) {
 }
 
 function mediaTypeFor(item, src = "") {
-  const value = `${item?.name || ""} ${src || item?.url || item?.dataUrl || ""}`.toLowerCase();
+  const value = `${item?.name || ""} ${item?.fileName || ""} ${item?.storagePath || ""} ${src || item?.url || item?.dataUrl || ""}`.toLowerCase();
   if (value.startsWith("data:video/") || /\.(mp4|mov|webm|ogv)(?:[?#]|$)/i.test(value)) return "video";
   return "image";
 }
@@ -796,7 +797,8 @@ function prepareVideoThumbnail(video, src) {
   video.load();
 }
 
-function renderImagesOnly() {
+async function renderImagesOnly() {
+  const renderToken = ++mediaRenderToken;
   if (!elGallery) return;
 
   const found = findNode(data.root, selectedId);
@@ -829,11 +831,12 @@ function renderImagesOnly() {
   elGallery.innerHTML = "";
 
   if (elImgHint) {
-    elImgHint.textContent = imgs.length ? "" : "No media on this category.";
+    elImgHint.textContent = imgs.length ? "Loading media..." : "No media on this category.";
   }
 
   for (const img of imgs) {
-    const src = safeMediaUrl(img.url || img.dataUrl || "");
+    const src = safeMediaUrl(await mediaUrlForDisplay(img));
+    if (renderToken !== mediaRenderToken || selectedId !== node.id) return;
     if (!src) continue;
     const mediaType = mediaTypeFor(img, src);
 
@@ -875,6 +878,8 @@ function renderImagesOnly() {
     card.appendChild(cap);
     elGallery.appendChild(card);
   }
+
+  if (renderToken === mediaRenderToken && elImgHint) elImgHint.textContent = "";
 }
 
 function renderAll() {
