@@ -514,7 +514,10 @@ function showError(error, message) {
 function setAdminEnabledState(enabled) {
   adminEnabled = enabled;
   adminWorkspace?.classList.toggle("hidden", !enabled);
-  if (!enabled) closeSidebar();
+  if (!enabled) {
+    closeSidebar();
+    openSettingsPanel();
+  }
   syncSidebarState();
 }
 
