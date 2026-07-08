@@ -937,6 +937,7 @@ async function startUserPortal() {
     }
 
     if (userSignOutBtn) userSignOutBtn.hidden = false;
+    renderAll();
     const loadedRemoteData = await syncFromRemote(applyRemote);
     document.body.classList.remove("auth-checking");
     if (!loadedRemoteData) renderAll();
