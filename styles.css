@@ -1477,6 +1477,11 @@ button.danger:hover { border-color: #ff5a5a; }
   justify-content: flex-end;
 }
 
+.admin-page .sidebar-header-actions {
+  flex: 1 1 100%;
+  justify-content: flex-start;
+}
+
 .sidebar-action-btn {
   padding: 8px 10px;
   border-radius: 10px;
