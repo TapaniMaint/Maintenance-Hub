@@ -69,6 +69,8 @@ const overlay = document.getElementById("overlay");
 const sidebarCloseBtn = document.getElementById("sidebarCloseBtn");
 const sidebar = document.getElementById("sidebar");
 const exportBackupBtn = document.getElementById("exportBackupBtn");
+const importBackupBtn = document.getElementById("importBackupBtn");
+const importBackupInput = document.getElementById("importBackupInput");
 const collapseTreeBtn = document.getElementById("collapseTreeBtn");
 const settingsToggleBtn = document.getElementById("settingsToggleBtn");
 const settingsPanel = document.getElementById("settingsPanel");
@@ -206,6 +208,12 @@ collapseTreeBtn?.addEventListener("click", () => {
   renderTree();
 });
 exportBackupBtn?.addEventListener("click", exportBackup);
+importBackupBtn?.addEventListener("click", () => importBackupInput?.click());
+importBackupInput?.addEventListener("change", () => {
+  const [file] = importBackupInput.files || [];
+  if (file) void importBackup(file);
+  importBackupInput.value = "";
+});
 window.addEventListener("resize", () => {
   if (!isSidebarDrawer()) closeSidebar();
   else syncSidebarState();
@@ -514,10 +522,46 @@ function showError(error, message) {
   setStatus(message, "error");
 }
 
-function exportBackup() {
+async function walkNodesAsync(root, callback, path = []) {
+  if (!root) return;
+  const nextPath = root.id === "root" ? path : [...path, root.name];
+  await callback(root, nextPath);
+  for (const child of root.children || []) await walkNodesAsync(child, callback, nextPath);
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function exportBackup() {
   try {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const backup = JSON.parse(JSON.stringify(data));
+    let linkedMedia = 0;
+    await walkNodesAsync(backup.root, async (node) => {
+      for (const item of node.images || []) {
+        if (item.dataUrl?.startsWith("data:")) continue;
+        const src = await mediaUrlForDisplay(item.storagePath ? { ...item, url: "" } : item);
+        if (!src || src.startsWith("data:")) {
+          if (item.url) linkedMedia += 1;
+          continue;
+        }
+        try {
+          const response = await fetch(src);
+          if (!response.ok) throw new Error(`Media request failed (${response.status}).`);
+          item.dataUrl = await blobToDataUrl(await response.blob());
+        } catch (error) {
+          linkedMedia += 1;
+          console.warn("Unable to include media in backup.", error);
+        }
+      }
+    });
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -526,9 +570,39 @@ function exportBackup() {
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
-    setStatus("Backup exported.", "success");
+    setStatus(linkedMedia ? `Backup exported. ${linkedMedia} linked media kept as URLs.` : "Backup exported with media.", "success");
   } catch (error) {
     showError(error, "Unable to export backup.");
+  }
+}
+
+async function importBackup(file) {
+  try {
+    const backup = JSON.parse(await file.text());
+    if (!backup?.root || !Array.isArray(backup.root.children)) throw new Error("Backup file has invalid data.");
+    if (!window.confirm("Import this backup and replace current data?")) return;
+
+    let restoredMedia = 0;
+    await walkNodesAsync(backup.root, async (node, categoryPath) => {
+      for (const item of node.images || []) {
+        if (!item.dataUrl?.startsWith("data:")) continue;
+        const blob = await (await fetch(item.dataUrl)).blob();
+        const restored = await uploadMediaFile(
+          new File([blob], `${Date.now()}-${item.fileName || item.name || "media"}`, { type: blob.type }),
+          node.id,
+          categoryPath
+        );
+        Object.assign(item, restored, { id: item.id, name: item.name || restored.name });
+        delete item.dataUrl;
+        restoredMedia += 1;
+      }
+    });
+
+    data = backup;
+    await persistData();
+    setStatus(`Backup imported. ${restoredMedia} media restored.`, "success");
+  } catch (error) {
+    showError(error, "Unable to import backup.");
   }
 }
 
