@@ -71,6 +71,9 @@ const sidebar = document.getElementById("sidebar");
 const exportBackupBtn = document.getElementById("exportBackupBtn");
 const importBackupBtn = document.getElementById("importBackupBtn");
 const importBackupInput = document.getElementById("importBackupInput");
+const exportManifestBtn = document.getElementById("exportManifestBtn");
+const importFolderBtn = document.getElementById("importFolderBtn");
+const importFolderInput = document.getElementById("importFolderInput");
 const collapseTreeBtn = document.getElementById("collapseTreeBtn");
 const settingsToggleBtn = document.getElementById("settingsToggleBtn");
 const settingsPanel = document.getElementById("settingsPanel");
@@ -213,6 +216,13 @@ importBackupInput?.addEventListener("change", () => {
   const [file] = importBackupInput.files || [];
   if (file) void importBackup(file);
   importBackupInput.value = "";
+});
+exportManifestBtn?.addEventListener("click", exportFolderManifest);
+importFolderBtn?.addEventListener("click", () => importFolderInput?.click());
+importFolderInput?.addEventListener("change", () => {
+  const files = [...importFolderInput.files || []];
+  if (files.length) void importFolderBackup(files);
+  importFolderInput.value = "";
 });
 window.addEventListener("resize", () => {
   if (!isSidebarDrawer()) closeSidebar();
@@ -603,6 +613,100 @@ async function importBackup(file) {
     setStatus(`Backup imported. ${restoredMedia} media restored.`, "success");
   } catch (error) {
     showError(error, "Unable to import backup.");
+  }
+}
+
+function downloadJson(value, fileName) {
+  const blob = new Blob([JSON.stringify(value, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+async function folderManifest() {
+  const backup = JSON.parse(JSON.stringify(data));
+  await walkNodesAsync(backup.root, async (node, categoryPath) => {
+    for (const item of node.images || []) {
+      item.sourceFile = [...categoryPath, item.fileName || item.name || `${item.id}.media`].join("/");
+      delete item.dataUrl;
+      delete item.url;
+      delete item.storagePath;
+    }
+  });
+  return {
+    type: "maintenance-hub-folder-backup",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    backup
+  };
+}
+
+async function exportFolderManifest() {
+  try {
+    const manifest = await folderManifest();
+    downloadJson(manifest, "maintenance-hub-folder-manifest.json");
+    setStatus("Folder manifest exported. Keep it with image files.", "success");
+  } catch (error) {
+    showError(error, "Unable to export folder manifest.");
+  }
+}
+
+function normalizedFilePath(path) {
+  return String(path || "").replaceAll("\\", "/").replace(/^\.\//, "").toLowerCase();
+}
+
+function findFolderFile(files, sourceFile) {
+  const target = normalizedFilePath(sourceFile);
+  const exact = files.find((file) => normalizedFilePath(file.webkitRelativePath || file.name).endsWith(target));
+  if (exact) return exact;
+
+  const name = target.split("/").pop();
+  const matches = files.filter((file) => normalizedFilePath(file.name) === name);
+  return matches.length === 1 ? matches[0] : null;
+}
+
+async function importFolderBackup(files) {
+  try {
+    const manifestFile = files.find((file) => file.name.toLowerCase() === "maintenance-hub-folder-manifest.json");
+    if (!manifestFile) throw new Error("Folder must contain maintenance-hub-folder-manifest.json.");
+    const manifest = JSON.parse(await manifestFile.text());
+    const backup = manifest?.backup;
+    if (manifest.type !== "maintenance-hub-folder-backup" || !backup?.root) {
+      throw new Error("Invalid folder manifest.");
+    }
+    if (!window.confirm("Import this image folder and replace current data?")) return;
+
+    let restoredMedia = 0;
+    const missing = [];
+    await walkNodesAsync(backup.root, async (node, categoryPath) => {
+      for (const item of node.images || []) {
+        const sourceFile = item.sourceFile || [...categoryPath, item.fileName || item.name].join("/");
+        const file = findFolderFile(files, sourceFile);
+        if (!file) {
+          missing.push(sourceFile);
+          continue;
+        }
+        const restored = await uploadMediaFile(
+          new File([file], `${Date.now()}-${file.name}`, { type: file.type }),
+          node.id,
+          categoryPath
+        );
+        Object.assign(item, restored, { id: item.id, name: item.name || restored.name });
+        restoredMedia += 1;
+      }
+    });
+
+    if (missing.length) throw new Error(`Missing image files: ${missing.slice(0, 3).join(", ")}${missing.length > 3 ? "..." : ""}`);
+    data = backup;
+    await persistData();
+    setStatus(`Folder imported. ${restoredMedia} media restored.`, "success");
+  } catch (error) {
+    showError(error, "Unable to import image folder.");
   }
 }
 
