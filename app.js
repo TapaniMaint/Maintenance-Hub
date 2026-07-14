@@ -727,27 +727,43 @@ export async function pushRemoteData(data) {
   }
 }
 
-async function deleteRowsNotIn(table, ids) {
-  const filter = ids.length
-    ? `id=not.in.(${ids.map(id => `"${String(id).replaceAll('"', '\\"')}"`).join(",")})`
-    : "id=not.is.null";
+async function rowsForCleanup(table, select) {
+  const rows = [];
+  const pageSize = 1000;
 
-  await requestJson(tableUrl(table, filter), {
-    method: "DELETE",
-    headers: await apiHeaders({ admin: true, Prefer: "return=minimal" })
-  });
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await requestJson(tableUrl(table, `select=${select}&limit=${pageSize}&offset=${offset}`), {
+      headers: await apiHeaders({ admin: true, Accept: "application/json" })
+    });
+    rows.push(...(page || []));
+    if (!page || page.length < pageSize) return rows;
+  }
+}
+
+async function deleteRowsNotIn(table, ids) {
+  const rows = await rowsForCleanup(table, "id");
+  const keepIds = new Set(ids.map(String));
+  const staleIds = (rows || []).map(row => row.id).filter(id => !keepIds.has(String(id)));
+
+  for (let index = 0; index < staleIds.length; index += 200) {
+    const batch = staleIds.slice(index, index + 200);
+    const filter = `id=in.(${batch.map(id => `"${String(id).replaceAll('"', '\\"')}"`).join(",")})`;
+    await requestJson(tableUrl(table, filter), {
+      method: "DELETE",
+      headers: await apiHeaders({ admin: true, Prefer: "return=minimal" })
+    });
+  }
 }
 
 async function storagePathsForRowsNotIn(ids) {
-  const filter = ids.length
-    ? `id=not.in.(${ids.map(id => `"${String(id).replaceAll('"', '\\"')}"`).join(",")})&storage_path=not.is.null`
-    : "id=not.is.null&storage_path=not.is.null";
+  const rows = (await rowsForCleanup(SUPABASE_CONFIG.mediaTable, "id,storage_path"))
+    .filter(row => row.storage_path);
+  const keepIds = new Set(ids.map(String));
 
-  const rows = await requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, `select=storage_path&${filter}`), {
-    headers: await apiHeaders({ admin: true, Accept: "application/json" })
-  });
-
-  return (rows || []).map((row) => row.storage_path).filter(Boolean);
+  return (rows || [])
+    .filter(row => !keepIds.has(String(row.id)))
+    .map(row => row.storage_path)
+    .filter(Boolean);
 }
 
 export async function uploadMediaFile(file, categoryId, categoryPath = []) {
