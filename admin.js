@@ -548,6 +548,15 @@ function blobToDataUrl(blob) {
   });
 }
 
+function stableMediaId(categoryId, sourceFile) {
+  const value = `${categoryId}:${sourceFile}`;
+  let hash = 5381;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) + hash) ^ value.charCodeAt(index);
+  }
+  return `media-${(hash >>> 0).toString(36)}`;
+}
+
 async function exportBackup() {
   try {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -598,11 +607,14 @@ async function importBackup(file) {
         if (!item.dataUrl?.startsWith("data:")) continue;
         const blob = await (await fetch(item.dataUrl)).blob();
         const restored = await uploadMediaFile(
-          new File([blob], `${Date.now()}-${item.fileName || item.name || "media"}`, { type: blob.type }),
+          new File([blob], item.fileName || item.name || "media", { type: blob.type }),
           node.id,
           categoryPath
         );
-        Object.assign(item, restored, { id: item.id, name: item.name || restored.name });
+        Object.assign(item, restored, {
+          id: item.id || stableMediaId(node.id, item.fileName || item.name || restored.fileName),
+          name: item.name || restored.name
+        });
         item.url = "";
         delete item.dataUrl;
         restoredMedia += 1;
@@ -694,11 +706,14 @@ async function importFolderBackup(files) {
           continue;
         }
         const restored = await uploadMediaFile(
-          new File([file], `${Date.now()}-${file.name}`, { type: file.type }),
+          new File([file], file.name, { type: file.type }),
           node.id,
           categoryPath
         );
-        Object.assign(item, restored, { id: item.id, name: item.name || restored.name });
+        Object.assign(item, restored, {
+          id: stableMediaId(node.id, sourceFile),
+          name: item.name || restored.name
+        });
         item.url = "";
         restoredMedia += 1;
       }
