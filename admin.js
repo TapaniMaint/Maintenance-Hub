@@ -603,6 +603,7 @@ async function importBackup(file) {
           categoryPath
         );
         Object.assign(item, restored, { id: item.id, name: item.name || restored.name });
+        item.url = "";
         delete item.dataUrl;
         restoredMedia += 1;
       }
@@ -610,6 +611,7 @@ async function importBackup(file) {
 
     data = backup;
     await persistData();
+    await syncFromRemote(applyRemote);
     setStatus(`Backup imported. ${restoredMedia} media restored.`, "success");
   } catch (error) {
     showError(error, "Unable to import backup.");
@@ -697,6 +699,7 @@ async function importFolderBackup(files) {
           categoryPath
         );
         Object.assign(item, restored, { id: item.id, name: item.name || restored.name });
+        item.url = "";
         restoredMedia += 1;
       }
     });
@@ -704,6 +707,7 @@ async function importFolderBackup(files) {
     if (missing.length) throw new Error(`Missing image files: ${missing.slice(0, 3).join(", ")}${missing.length > 3 ? "..." : ""}`);
     data = backup;
     await persistData();
+    await syncFromRemote(applyRemote);
     setStatus(`Folder imported. ${restoredMedia} media restored.`, "success");
   } catch (error) {
     showError(error, "Unable to import image folder.");
