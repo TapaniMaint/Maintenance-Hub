@@ -766,17 +766,14 @@ export async function uploadMediaFile(file, categoryId, categoryPath = []) {
     .join("/");
   const safeName = safeStorageSegment(file.name, "media");
   const path = `${folderPath}/${safeName}`;
-  const url = `${SUPABASE_CONFIG.url}/storage/v1/object/${SUPABASE_CONFIG.storageBucket}/${encodeURI(path)}`;
-
-  await requestJson(url, {
-    method: "POST",
-    headers: await apiHeaders({
-      admin: true,
-      "Content-Type": uploadContentType(file),
-      "x-upsert": "false"
-    }),
-    body: file
-  });
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase.storage
+    .from(SUPABASE_CONFIG.storageBucket)
+    .upload(path, file, {
+      contentType: uploadContentType(file),
+      upsert: true
+    });
+  if (error) throw new Error(`Supabase storage upload failed: ${error.message}`);
 
   return {
     id,
