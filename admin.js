@@ -707,10 +707,11 @@ async function importFolderBackup(files) {
     if (missing.length) throw new Error(`Missing image files: ${missing.slice(0, 3).join(", ")}${missing.length > 3 ? "..." : ""}`);
     data = backup;
     await persistData();
-    await syncFromRemote(applyRemote);
+    const synced = await syncFromRemote(applyRemote);
+    if (!synced) throw new Error("Supabase data sync failed after import. Check browser console for the remote error.");
     setStatus(`Folder imported. ${restoredMedia} media restored.`, "success");
   } catch (error) {
-    showError(error, "Unable to import image folder.");
+    showError(error, `Unable to import image folder. ${error.message || ""}`.trim());
   }
 }
 
