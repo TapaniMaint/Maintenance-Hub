@@ -1497,14 +1497,7 @@ document.getElementById("departmentSaveBtn")?.addEventListener("click", async ()
   const message = `Save "${department.name}" with ${selectedCount} visible categories? This changes what users in this department can see.`;
   if (!window.confirm(message)) return;
   applyDepartmentForm(department);
-  await persistData({ render: false });
-  const savedDepartment = currentDepartment();
-  const selectedOption = savedDepartment && elDepartmentSelect
-    ? elDepartmentSelect.querySelector(`option[value="${CSS.escape(savedDepartment.id)}"]`)
-    : null;
-  if (selectedOption) selectedOption.textContent = savedDepartment.name;
-  refreshDepartmentCategoryInputPaint();
-  window.requestAnimationFrame(refreshDepartmentCategoryInputPaint);
+  await persistData();
 });
 
 document.getElementById("departmentSelectAllBtn")?.addEventListener("click", () => {
