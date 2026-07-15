@@ -597,9 +597,17 @@ body.home-visible #treeToggleBtn {
 
 @media (min-width: 981px) {
   body:not(.admin-page) .sidebar {
-    position: sticky;
+    position: fixed;
+    left: 12px;
     top: 70px;
-    height: calc(100dvh - 82px);
+    bottom: 12px;
+    width: 360px;
+    height: auto;
+    z-index: 20;
+  }
+
+  body:not(.admin-page):not(.home-visible) .portal-content {
+    margin-left: 372px;
   }
 }
 
