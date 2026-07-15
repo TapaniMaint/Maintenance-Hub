@@ -1010,6 +1010,23 @@ function syncDepartmentCategoryStates() {
   }
 }
 
+function refreshDepartmentCategoryInputPaint() {
+  if (!elDepartmentCategoryList) return;
+  const assignedIds = new Set(currentDepartment()?.categoryIds || []);
+  for (const input of elDepartmentCategoryList.querySelectorAll('input[type="checkbox"]')) {
+    const checked = assignedIds.has(input.value);
+    input.defaultChecked = checked;
+    input.checked = !checked;
+    input.checked = checked;
+  }
+  syncDepartmentCategoryStates();
+  elDepartmentCategoryList.style.transform = "translateZ(0)";
+  void elDepartmentCategoryList.offsetHeight;
+  window.requestAnimationFrame(() => {
+    if (elDepartmentCategoryList) elDepartmentCategoryList.style.transform = "";
+  });
+}
+
 function categoryMatchesDepartmentView(node, query, filter, assignedIds, path = []) {
   const text = [...path, node.name].join(" / ").toLowerCase();
   const searchMatch = !query || text.includes(query);
@@ -1485,6 +1502,8 @@ document.getElementById("departmentSaveBtn")?.addEventListener("click", async ()
     ? elDepartmentSelect.querySelector(`option[value="${CSS.escape(savedDepartment.id)}"]`)
     : null;
   if (selectedOption) selectedOption.textContent = savedDepartment.name;
+  refreshDepartmentCategoryInputPaint();
+  window.requestAnimationFrame(refreshDepartmentCategoryInputPaint);
 });
 
 document.getElementById("departmentSelectAllBtn")?.addEventListener("click", () => {
