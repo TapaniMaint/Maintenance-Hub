@@ -1400,12 +1400,12 @@ function validateUploadFiles(files) {
   }
 }
 
-async function persistData() {
+async function persistData({ render = true } = {}) {
   try {
     await alignMediaStoragePaths(data.root);
     await saveData(data);
     data = loadData();
-    renderTree();
+    if (render) renderTree();
     setStatus("Changes saved.", "success");
   } catch (error) {
     data = loadData();
@@ -1479,8 +1479,12 @@ document.getElementById("departmentSaveBtn")?.addEventListener("click", async ()
   const message = `Save "${department.name}" with ${selectedCount} visible categories? This changes what users in this department can see.`;
   if (!window.confirm(message)) return;
   applyDepartmentForm(department);
-  await persistData();
-  window.setTimeout(() => renderDepartmentEditor(), 0);
+  await persistData({ render: false });
+  const savedDepartment = currentDepartment();
+  const selectedOption = savedDepartment && elDepartmentSelect
+    ? elDepartmentSelect.querySelector(`option[value="${CSS.escape(savedDepartment.id)}"]`)
+    : null;
+  if (selectedOption) selectedOption.textContent = savedDepartment.name;
 });
 
 document.getElementById("departmentSelectAllBtn")?.addEventListener("click", () => {
