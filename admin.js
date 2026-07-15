@@ -9,7 +9,7 @@ import {
   uploadMediaFile,
   alignMediaStoragePaths,
   mediaUrlForDisplay
-} from "./app.js";
+} from "./app.js?v=dept-visual-20260715";
 import {
   getUser,
   isAdminUser,
