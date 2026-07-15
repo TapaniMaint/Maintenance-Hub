@@ -9,7 +9,7 @@ import {
   uploadMediaFile,
   alignMediaStoragePaths,
   mediaUrlForDisplay
-} from "./app.js?v=category-save-20260715";
+} from "./app.js?v=category-save-2-20260715";
 import {
   getUser,
   isAdminUser,
@@ -1590,6 +1590,7 @@ document.getElementById("addMasterBtn")?.addEventListener("click", async () => {
   saveExpanded();
   if (elAddMasterInput) elAddMasterInput.value = "";
 
+  renderTree();
   await persistData();
 });
 

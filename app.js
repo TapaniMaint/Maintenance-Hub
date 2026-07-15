@@ -683,7 +683,12 @@ export async function pushRemoteData(data) {
     return depth;
   }
 
-  categories.sort((a, b) => getCategoryDepth(a) - getCategoryDepth(b));
+  const categoriesByDepth = new Map();
+  for (const category of categories) {
+    const depth = getCategoryDepth(category);
+    if (!categoriesByDepth.has(depth)) categoriesByDepth.set(depth, []);
+    categoriesByDepth.get(depth).push(category);
+  }
 
   if (departments.length) {
     try {
@@ -702,7 +707,9 @@ export async function pushRemoteData(data) {
   }
 
   if (categories.length) {
-    await upsertRowsInBatches(SUPABASE_CONFIG.categoriesTable, categories);
+    for (const depth of [...categoriesByDepth.keys()].sort((a, b) => a - b)) {
+      await upsertRowsInBatches(SUPABASE_CONFIG.categoriesTable, categoriesByDepth.get(depth));
+    }
   }
 
   if (media.length) {
