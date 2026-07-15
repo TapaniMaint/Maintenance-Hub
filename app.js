@@ -690,22 +690,6 @@ export async function pushRemoteData(data) {
     categoriesByDepth.get(depth).push(category);
   }
 
-  if (departments.length) {
-    try {
-      await upsertRowsInBatches(
-        SUPABASE_CONFIG.departmentsTable,
-        departmentRowsWithSupportedColumns(departments)
-      );
-    } catch (error) {
-      if (!supportsDepartmentSnapshotItems || !missingDepartmentSnapshotItemsColumn(error)) throw error;
-      supportsDepartmentSnapshotItems = false;
-      await upsertRowsInBatches(
-        SUPABASE_CONFIG.departmentsTable,
-        departmentRowsWithSupportedColumns(departments)
-      );
-    }
-  }
-
   if (categories.length) {
     for (const depth of [...categoriesByDepth.keys()].sort((a, b) => a - b)) {
       await upsertRowsInBatches(SUPABASE_CONFIG.categoriesTable, categoriesByDepth.get(depth));
@@ -723,9 +707,26 @@ export async function pushRemoteData(data) {
   }
 
   const staleStoragePaths = await storagePathsForRowsNotIn(media.map(item => item.id));
-  await deleteRowsNotIn(SUPABASE_CONFIG.departmentsTable, departments.map(item => item.id));
   await deleteRowsNotIn(SUPABASE_CONFIG.mediaTable, media.map(item => item.id));
   await deleteRowsNotIn(SUPABASE_CONFIG.categoriesTable, categories.map(item => item.id));
+
+  if (departments.length) {
+    try {
+      await upsertRowsInBatches(
+        SUPABASE_CONFIG.departmentsTable,
+        departmentRowsWithSupportedColumns(departments)
+      );
+    } catch (error) {
+      if (!supportsDepartmentSnapshotItems || !missingDepartmentSnapshotItemsColumn(error)) throw error;
+      supportsDepartmentSnapshotItems = false;
+      await upsertRowsInBatches(
+        SUPABASE_CONFIG.departmentsTable,
+        departmentRowsWithSupportedColumns(departments)
+      );
+    }
+  }
+
+  await deleteRowsNotIn(SUPABASE_CONFIG.departmentsTable, departments.map(item => item.id));
 
   try {
     await removeStorageObjects(staleStoragePaths);

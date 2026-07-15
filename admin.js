@@ -9,7 +9,7 @@ import {
   uploadMediaFile,
   alignMediaStoragePaths,
   mediaUrlForDisplay
-} from "./app.js?v=category-save-4-20260715";
+} from "./app.js?v=category-save-5-20260715";
 import {
   getUser,
   isAdminUser,
@@ -1638,8 +1638,9 @@ document.getElementById("deleteBtn")?.addEventListener("click", async () => {
   try {
     if (!await confirmCategoryDelete(found.node)) return;
 
-    removeNodeById(data.root, selectedId);
-    removeCategoryRefs(descendantCategoryIds(found.node));
+    const categoryIds = descendantCategoryIds(found.node);
+    if (!removeNodeById(data.root, selectedId)) return;
+    removeCategoryRefs(categoryIds);
     selectedId = data.root.children[0]?.id || "root";
     await persistData();
   } catch (error) {
