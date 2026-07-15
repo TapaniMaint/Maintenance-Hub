@@ -599,7 +599,7 @@ body.home-visible #treeToggleBtn {
   body:not(.admin-page) .sidebar {
     position: fixed;
     left: 12px;
-    top: 70px;
+    top: 82px;
     bottom: 12px;
     width: 360px;
     height: auto;
@@ -1968,7 +1968,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
 @media (min-width:346px){
   .settings-panel {
-    top: 70px;
+    top: 78px;
   }
 }
 .lightbox {
