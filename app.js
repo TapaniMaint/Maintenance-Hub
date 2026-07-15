@@ -432,6 +432,19 @@ async function requestJson(url, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
+async function fetchRowsInPages(table, query) {
+  const rows = [];
+  const pageSize = 1000;
+
+  for (let offset = 0; ; offset += pageSize) {
+    const page = await requestJson(tableUrl(table, `${query}&limit=${pageSize}&offset=${offset}`), {
+      headers: await apiHeaders({ Accept: "application/json" })
+    });
+    rows.push(...(page || []));
+    if (!page || page.length < pageSize) return rows;
+  }
+}
+
 async function upsertRowsInBatches(table, rows) {
   for (let offset = 0; offset < rows.length; offset += REMOTE_WRITE_BATCH_SIZE) {
     await requestJson(tableUrl(table, "on_conflict=id"), {
@@ -600,20 +613,14 @@ async function fetchRemoteData() {
     ? "select=id,category_id,name,file_name,url,storage_path,sort_order,updated_at&order=sort_order.asc"
     : "select=id,category_id,name,url,storage_path,sort_order,updated_at&order=sort_order.asc";
   const [categories, media] = await Promise.all([
-    requestJson(tableUrl(SUPABASE_CONFIG.categoriesTable, categoryQuery), {
-      headers: await apiHeaders({ Accept: "application/json" })
-    }),
-    requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, mediaQuery), {
-      headers: await apiHeaders({ Accept: "application/json" })
-    })
+    fetchRowsInPages(SUPABASE_CONFIG.categoriesTable, categoryQuery),
+    fetchRowsInPages(SUPABASE_CONFIG.mediaTable, mediaQuery)
   ]);
 
   if (!categories?.length) return null;
   let departments = [];
   try {
-    departments = await requestJson(tableUrl(SUPABASE_CONFIG.departmentsTable, departmentQuery), {
-      headers: await apiHeaders({ Accept: "application/json" })
-    });
+    departments = await fetchRowsInPages(SUPABASE_CONFIG.departmentsTable, departmentQuery);
   } catch (error) {
     if (!missingRemoteTable(error)) throw error;
     console.warn("Supabase departments table is missing. Run supabase-schema.sql to persist departments.");
