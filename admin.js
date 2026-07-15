@@ -1480,6 +1480,7 @@ document.getElementById("departmentSaveBtn")?.addEventListener("click", async ()
   if (!window.confirm(message)) return;
   applyDepartmentForm(department);
   await persistData();
+  window.requestAnimationFrame(() => renderDepartmentEditor());
 });
 
 document.getElementById("departmentSelectAllBtn")?.addEventListener("click", () => {
