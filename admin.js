@@ -1698,7 +1698,8 @@ elClearImagesBtn?.addEventListener("click", async () => {
   }
 });
 
-onAuthStateChange(() => {
+onAuthStateChange((session) => {
+  if (session && adminEnabled) return;
   void refreshAuthState();
 });
 
