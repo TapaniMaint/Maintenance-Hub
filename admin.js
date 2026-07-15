@@ -46,6 +46,7 @@ let adminEnabled = false;
 let selectedMediaKeys = new Set();
 let departmentCategoryExpanded = new Set();
 let mediaRenderToken = 0;
+let authRefreshPromise = null;
 
 const authForm = document.getElementById("authForm");
 const adminWorkspace = document.getElementById("adminWorkspace");
@@ -1422,7 +1423,7 @@ async function persistData({ render = true } = {}) {
   }
 }
 
-async function refreshAuthState() {
+async function refreshAuthStateImpl() {
   const user = await getUser();
   const admin = await isAdminUser();
 
@@ -1447,6 +1448,16 @@ async function refreshAuthState() {
   setStatus("Admin session active. Supabase writes now use the user's access token.", "success");
   await syncFromRemote(applyRemote);
   renderTree();
+}
+
+async function refreshAuthState() {
+  if (authRefreshPromise) return authRefreshPromise;
+  authRefreshPromise = refreshAuthStateImpl();
+  try {
+    return await authRefreshPromise;
+  } finally {
+    authRefreshPromise = null;
+  }
 }
 
 authForm?.addEventListener("submit", async (event) => {
