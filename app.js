@@ -3,6 +3,7 @@ import { getAccessToken, requireAdminAccessToken, supabase } from "./supabase-cl
 
 const STORE_KEY = "maintenanceHubData_v1";
 const SIGNED_MEDIA_URL_TTL_SECONDS = 60 * 60;
+const REMOTE_WRITE_BATCH_SIZE = 500;
 export const DEFAULT_DEPARTMENT_ID = "mechanics";
 export const LANDING_SNAPSHOT_ITEMS = [
   {
@@ -431,6 +432,20 @@ async function requestJson(url, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
+async function upsertRowsInBatches(table, rows) {
+  for (let offset = 0; offset < rows.length; offset += REMOTE_WRITE_BATCH_SIZE) {
+    await requestJson(tableUrl(table, "on_conflict=id"), {
+      method: "POST",
+      headers: await apiHeaders({
+        admin: true,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal"
+      }),
+      body: JSON.stringify(rows.slice(offset, offset + REMOTE_WRITE_BATCH_SIZE))
+    });
+  }
+}
+
 function flattenTree(root) {
   const categories = [];
   const media = [];
@@ -653,65 +668,31 @@ export async function pushRemoteData(data) {
 
   if (departments.length) {
     try {
-      await requestJson(tableUrl(SUPABASE_CONFIG.departmentsTable, "on_conflict=id"), {
-        method: "POST",
-        headers: await apiHeaders({
-          admin: true,
-          "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates,return=minimal"
-        }),
-        body: JSON.stringify(departmentRowsWithSupportedColumns(departments))
-      });
+      await upsertRowsInBatches(
+        SUPABASE_CONFIG.departmentsTable,
+        departmentRowsWithSupportedColumns(departments)
+      );
     } catch (error) {
       if (!supportsDepartmentSnapshotItems || !missingDepartmentSnapshotItemsColumn(error)) throw error;
       supportsDepartmentSnapshotItems = false;
-      await requestJson(tableUrl(SUPABASE_CONFIG.departmentsTable, "on_conflict=id"), {
-        method: "POST",
-        headers: await apiHeaders({
-          admin: true,
-          "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates,return=minimal"
-        }),
-        body: JSON.stringify(departmentRowsWithSupportedColumns(departments))
-      });
+      await upsertRowsInBatches(
+        SUPABASE_CONFIG.departmentsTable,
+        departmentRowsWithSupportedColumns(departments)
+      );
     }
   }
 
   if (categories.length) {
-    await requestJson(tableUrl(SUPABASE_CONFIG.categoriesTable, "on_conflict=id"), {
-      method: "POST",
-      headers: await apiHeaders({
-        admin: true,
-        "Content-Type": "application/json",
-        Prefer: "resolution=merge-duplicates,return=minimal"
-      }),
-      body: JSON.stringify(categories)
-    });
+    await upsertRowsInBatches(SUPABASE_CONFIG.categoriesTable, categories);
   }
 
   if (media.length) {
     try {
-      await requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, "on_conflict=id"), {
-        method: "POST",
-        headers: await apiHeaders({
-          admin: true,
-          "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates,return=minimal"
-        }),
-        body: JSON.stringify(mediaRowsForRemote(media))
-      });
+      await upsertRowsInBatches(SUPABASE_CONFIG.mediaTable, mediaRowsForRemote(media));
     } catch (error) {
       if (!supportsMediaFileName || !missingFileNameColumn(error)) throw error;
       supportsMediaFileName = false;
-      await requestJson(tableUrl(SUPABASE_CONFIG.mediaTable, "on_conflict=id"), {
-        method: "POST",
-        headers: await apiHeaders({
-          admin: true,
-          "Content-Type": "application/json",
-          Prefer: "resolution=merge-duplicates,return=minimal"
-        }),
-        body: JSON.stringify(mediaRowsForRemote(media))
-      });
+      await upsertRowsInBatches(SUPABASE_CONFIG.mediaTable, mediaRowsForRemote(media));
     }
   }
 
