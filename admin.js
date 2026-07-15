@@ -1410,11 +1410,11 @@ function validateUploadFiles(files) {
   }
 }
 
-async function persistData({ render = true } = {}) {
+async function persistData({ render = true, alignMedia = true } = {}) {
   saveInProgress += 1;
   try {
     if (render) renderTree();
-    await alignMediaStoragePaths(data.root);
+    if (alignMedia) await alignMediaStoragePaths(data.root);
     await saveData(data);
     data = loadData();
     if (render) renderTree();
@@ -1504,7 +1504,8 @@ document.getElementById("departmentSaveBtn")?.addEventListener("click", async ()
   const message = `Save "${department.name}" with ${selectedCount} visible categories? This changes what users in this department can see.`;
   if (!window.confirm(message)) return;
   applyDepartmentForm(department);
-  await persistData();
+  await persistData({ render: false, alignMedia: false });
+  renderDepartmentEditor();
 });
 
 document.getElementById("departmentSelectAllBtn")?.addEventListener("click", () => {
