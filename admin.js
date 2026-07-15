@@ -1531,25 +1531,33 @@ document.getElementById("departmentSaveBtn")?.addEventListener("click", async ()
   renderDepartmentEditor();
 });
 
-document.getElementById("departmentSelectAllBtn")?.addEventListener("click", () => {
+document.getElementById("departmentSelectAllBtn")?.addEventListener("click", async () => {
   const department = currentDepartment();
   if (!department) return;
 
   const allIds = categoryRows(data.root).map(({ node }) => node.id);
   const count = allIds.length;
   const message = `Select all ${count} categories for "${department.name}"? This may expose media from every shared category to this department.`;
-  if (!window.confirm(message)) return;
+  if (!await confirmAdminAction({
+    title: "Select all categories?",
+    message,
+    confirmText: "Select all"
+  })) return;
 
   department.categoryIds = allIds;
   renderDepartmentEditor();
 });
 
-document.getElementById("departmentClearAllBtn")?.addEventListener("click", () => {
+document.getElementById("departmentClearAllBtn")?.addEventListener("click", async () => {
   const department = currentDepartment();
   if (!department) return;
   const count = department.categoryIds?.length || 0;
   const message = `Clear all visible categories for "${department.name}"? This hides ${count} currently selected categories from this department until changed again.`;
-  if (!window.confirm(message)) return;
+  if (!await confirmAdminAction({
+    title: "Clear visible categories?",
+    message,
+    confirmText: "Clear all"
+  })) return;
   department.categoryIds = [];
   renderDepartmentEditor();
 });
