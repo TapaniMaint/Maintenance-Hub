@@ -1004,7 +1004,7 @@ function syncDepartmentCategoryStates() {
     }
 
     const checkedCount = childIds.filter((id) => assignedIds.has(id)).length;
-    input.checked = checkedCount === childIds.length && assignedIds.has(node.id);
+    input.checked = assignedIds.has(node.id);
     input.indeterminate = (checkedCount > 0 && checkedCount < childIds.length) ||
       (checkedCount === childIds.length && !assignedIds.has(node.id));
   }
