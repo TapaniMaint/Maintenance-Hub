@@ -671,6 +671,19 @@ export async function pushRemoteData(data) {
 
   const { categories, media } = flattenTree(data.root);
   const departments = departmentRowsForRemote(data.departments);
+  const categoryIds = new Set(categories.map((category) => category.id));
+  const categoryDepth = new Map();
+
+  function getCategoryDepth(category) {
+    if (!category.parent_id || !categoryIds.has(category.parent_id)) return 0;
+    if (categoryDepth.has(category.id)) return categoryDepth.get(category.id);
+    const parent = categories.find((item) => item.id === category.parent_id);
+    const depth = parent ? getCategoryDepth(parent) + 1 : 0;
+    categoryDepth.set(category.id, depth);
+    return depth;
+  }
+
+  categories.sort((a, b) => getCategoryDepth(a) - getCategoryDepth(b));
 
   if (departments.length) {
     try {
