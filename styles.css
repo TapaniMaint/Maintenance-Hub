@@ -1914,7 +1914,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
   .settings-panel {
     position: fixed;
-    top: 110px;
+    top: 78px;
     left: 15px;
     right: 15px;
     width: auto;
