@@ -28,6 +28,13 @@
   --open-pill-text: rgba(232, 237, 244, 0.9);
   --open-pill-bg: rgba(255,255,255,0.04);
   --settings-icon: #ffffff;
+  --radius-none: 0;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
 }
 
 :root[data-theme="light"] {
@@ -204,7 +211,7 @@ body.lightbox-open {
   justify-content: center;
   min-width: 92px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   white-space: nowrap;
 }
 
@@ -216,7 +223,7 @@ body.lightbox-open {
 .site-header nav a {
   border: 1px solid var(--button-border);
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--button-bg);
 }
 
@@ -255,7 +262,7 @@ body.lightbox-open {
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   padding: 12px;
 }
 
@@ -296,7 +303,7 @@ body.lightbox-open {
   height: 100%;
   max-height: calc(100dvh - 82px);
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
 }
 
 .sidebar.sidebar-flash {
@@ -365,7 +372,7 @@ body.home-visible #treeToggleBtn {
   min-height: 260px;
   align-content: end;
   padding: clamp(22px, 5vw, 52px);
-  border-radius: 8px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(90deg, rgba(7, 10, 15, 0.86), rgba(7, 10, 15, 0.34)),
     url("images/Columbia Palisades.jpg") center / cover;
@@ -398,7 +405,7 @@ body.home-visible #treeToggleBtn {
   min-height: 136px;
   align-content: start;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   color: inherit;
   text-decoration: none;
   text-align: left;
@@ -429,7 +436,7 @@ body.home-visible #treeToggleBtn {
   position: relative;
   flex: 1 1 auto;
   min-height: min(640px, calc(100dvh - 130px));
-  border-radius: 8px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   background: var(--media-bg);
   isolation: isolate;
@@ -547,7 +554,7 @@ body.home-visible #treeToggleBtn {
 .stat-tile,
 .tech-link {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--panel2);
   min-width: 0;
 }
@@ -696,7 +703,7 @@ input[type="file"],
 select {
   width: 100%;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--input-bg);
   color: var(--text);
@@ -717,7 +724,7 @@ button {
   background: var(--button-bg);
   color: var(--text);
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   max-width: 100%;
 }
 button:hover {
@@ -757,7 +764,7 @@ button.danger:hover { border-color: #ff5a5a; }
 .department-picker__select {
   height: 34px;
   padding: 6px 8px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--button-bg);
 }
 
@@ -789,7 +796,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
 .department-admin__snapshot {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 10px;
 }
 
@@ -846,7 +853,7 @@ button.danger:hover { border-color: #ff5a5a; }
   padding: 6px 10px;
   margin-left: calc(var(--tree-depth, 0) * 14px);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--panel2);
   color: var(--text);
   font-size: 13px;
@@ -858,7 +865,7 @@ button.danger:hover { border-color: #ff5a5a; }
   height: 26px;
   min-width: 0;
   padding: 0;
-  border-radius: 6px;
+  border-radius: max(var(--radius-sm), calc(var(--radius-md) - 2px));
   font-size: 12px;
   line-height: 1;
 }
@@ -889,7 +896,7 @@ button.danger:hover { border-color: #ff5a5a; }
   appearance: none;
   -webkit-appearance: none;
   border: 1px solid var(--button-border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--input-bg);
 }
 
@@ -935,7 +942,7 @@ button.danger:hover { border-color: #ff5a5a; }
 .confirm-dialog {
   width: min(100%, 420px);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--panel);
   padding: 16px;
   box-shadow: 0 18px 48px rgba(0,0,0,0.38);
@@ -986,7 +993,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
 .sidebar-search input {
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .tree-empty {
@@ -1018,7 +1025,7 @@ button.danger:hover { border-color: #ff5a5a; }
   margin-left: calc(var(--tree-depth, 0) * 12px);
   padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--tree-base);
   color: var(--text);
   font: inherit;
@@ -1142,7 +1149,7 @@ button.danger:hover { border-color: #ff5a5a; }
   left: 10px;
   right: 10px;
   height: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--accent);
   pointer-events: none;
 }
@@ -1165,7 +1172,7 @@ button.danger:hover { border-color: #ff5a5a; }
   font-size: 11px;
   border: 1px solid #3a4b6b;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   color: var(--open-pill-text);
   background: var(--open-pill-bg);
   margin-left: 6px;
@@ -1176,7 +1183,7 @@ button.danger:hover { border-color: #ff5a5a; }
 .badge {
   font-size: 12px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 3px 8px;
   color: var(--muted);
   white-space: nowrap;
@@ -1194,7 +1201,7 @@ button.danger:hover { border-color: #ff5a5a; }
   background: var(--panel2);
   color: var(--text);
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   text-decoration: none;
 }
 .crumb:hover { border-color: var(--accent); }
@@ -1249,7 +1256,9 @@ button.danger:hover { border-color: #ff5a5a; }
   position: relative;
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  --radius: var(--radius-lg);
+  --padding: 8px;
+  border-radius: var(--radius);
   background: var(--panel2);
   overflow: hidden;
   display: flex;
@@ -1317,7 +1326,7 @@ button.danger:hover { border-color: #ff5a5a; }
   height: 40px;
   padding: 8px 10px;
   font-size: 14px;
-  border-radius: 8px;
+  border-radius: max(var(--radius-sm), calc(var(--radius) - var(--padding)));
 }
 
 .card .media-name-save {
@@ -1348,7 +1357,7 @@ button.danger:hover { border-color: #ff5a5a; }
   top: 10px;
   right: 10px;
   padding: 5px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: rgba(7, 10, 15, 0.82);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: #fff;
@@ -1364,7 +1373,7 @@ button.danger:hover { border-color: #ff5a5a; }
   background: var(--button-bg);
   color: var(--text);
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 .iconbtn:hover {
   border-color: var(--accent);
@@ -1399,7 +1408,7 @@ button.danger:hover { border-color: #ff5a5a; }
   width: 42px;
   height: 42px;
   padding: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   color: var(--settings-icon);
 }
 
@@ -1421,7 +1430,7 @@ button.danger:hover { border-color: #ff5a5a; }
   width: min(220px, calc(100vw - 24px));
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--panel);
   color: var(--text);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
@@ -1452,7 +1461,7 @@ button.danger:hover { border-color: #ff5a5a; }
 .settings-auth__form input {
   min-height: 34px;
   padding: 7px 9px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 
 .settings-auth__actions {
@@ -1504,7 +1513,7 @@ button.danger:hover { border-color: #ff5a5a; }
   min-height: 34px;
   padding: 6px 8px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--panel2);
   color: var(--text);
 }
@@ -1531,7 +1540,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
 .sidebar-action-btn {
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--button-bg);
 }
 
@@ -1571,7 +1580,7 @@ button.danger:hover { border-color: #ff5a5a; }
     min-width: 112px;
     min-height: 52px;
     justify-content: center;
-    border-radius: 999px;
+    border-radius: var(--radius-full);
     box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
   }
 
@@ -1592,7 +1601,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
   .auth-shell {
     flex: 0 1 auto;
-    width: 100%;
+    /* width: 100%; */
   }
 
   .sidebar {
@@ -1609,7 +1618,7 @@ button.danger:hover { border-color: #ff5a5a; }
     transform: translateX(-105%);
     transition: transform 220ms cubic-bezier(0.22, 0.61, 0.36, 1);
     will-change: transform;
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     max-height: none;
     visibility: hidden;
     pointer-events: none;
@@ -1712,7 +1721,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
   .panel {
     padding: 10px;
-    border-radius: 14px;
+    border-radius: var(--radius-lg);
   }
 
   .workspace-shell { flex-direction: column; }
@@ -1755,7 +1764,7 @@ button.danger:hover { border-color: #ff5a5a; }
     height: 34px;
     font-size: 16px;
     line-height: 1.2;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
   
   }
 
@@ -1772,7 +1781,7 @@ button.danger:hover { border-color: #ff5a5a; }
     min-height: 34px;
     font-size: 16px;
     line-height: 1.2;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
   }
 
   #imgInput::file-selector-button {
@@ -1800,7 +1809,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
   .sidebar {
     top: 65px;
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
   }
 
   .content { width: 100%; }
@@ -1915,9 +1924,10 @@ button.danger:hover { border-color: #ff5a5a; }
   .settings-panel {
     position: fixed;
     top: 78px;
-    left: 15px;
-    right: 15px;
-    width: auto;
+    /* left: max(12px, env(safe-area-inset-left)); */
+    right: max(12px, env(safe-area-inset-right));
+    /* width: auto; */
+    min-width: 0;
     max-height: calc(100dvh - 74px);
     overflow-y: auto;
   }
@@ -2008,7 +2018,7 @@ button.danger:hover { border-color: #ff5a5a; }
   align-items: center;
   justify-content: center;
   padding: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border-color: rgba(255, 255, 255, 0.45);
   background: rgba(0, 0, 0, 0.72);
   color: #fff;
@@ -2040,7 +2050,7 @@ button.danger:hover { border-color: #ff5a5a; }
   max-height: 100%;
   object-fit: contain;
   display: block;
-  border-radius: 0;
+  border-radius: var(--radius-none);
   background: #000;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0) scale(1);
