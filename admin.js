@@ -777,7 +777,9 @@ const elGallery = document.getElementById("gallery");
 const elImgInput = document.getElementById("imgInput");
 const elClearImagesBtn = document.getElementById("clearImagesBtn");
 const categoryDeleteModal = document.getElementById("categoryDeleteModal");
+const categoryDeleteTitle = document.getElementById("categoryDeleteTitle");
 const categoryDeleteMessage = document.getElementById("categoryDeleteMessage");
+const categoryDeleteWarning = categoryDeleteModal?.querySelector(".confirm-warning");
 const cancelCategoryDeleteBtn = document.getElementById("cancelCategoryDeleteBtn");
 const confirmCategoryDeleteBtn = document.getElementById("confirmCategoryDeleteBtn");
 
@@ -883,17 +885,19 @@ function removeCategoryRefs(categoryIds) {
   }
 }
 
-function confirmCategoryDelete(node) {
-  const childCount = countDescendants(node);
-  const mediaCount = countMediaItems(node);
-  const childLabel = childCount === 1 ? "1 child category" : `${childCount} child categories`;
-  const mediaLabel = mediaCount === 1 ? "1 media item" : `${mediaCount} media items`;
-
+function confirmAdminAction({ title, message, warning = "", confirmText = "Confirm", danger = false }) {
   if (!categoryDeleteModal || !categoryDeleteMessage || !cancelCategoryDeleteBtn || !confirmCategoryDeleteBtn) {
-    return Promise.resolve(window.confirm(`Delete "${node.name}" and everything under it?`));
+    return Promise.resolve(window.confirm(message));
   }
 
-  categoryDeleteMessage.textContent = `Delete "${node.name}"? This will remove ${childLabel} and ${mediaLabel}.`;
+  if (categoryDeleteTitle) categoryDeleteTitle.textContent = title;
+  categoryDeleteMessage.textContent = message;
+  if (categoryDeleteWarning) {
+    categoryDeleteWarning.textContent = warning;
+    categoryDeleteWarning.hidden = !warning;
+  }
+  confirmCategoryDeleteBtn.textContent = confirmText;
+  confirmCategoryDeleteBtn.classList.toggle("danger", danger);
   categoryDeleteModal.classList.add("open");
   categoryDeleteModal.setAttribute("aria-hidden", "false");
   cancelCategoryDeleteBtn.focus();
@@ -929,6 +933,21 @@ function confirmCategoryDelete(node) {
     confirmCategoryDeleteBtn.addEventListener("click", onConfirm);
     categoryDeleteModal.addEventListener("click", onBackdrop);
     document.addEventListener("keydown", onKeydown);
+  });
+}
+
+function confirmCategoryDelete(node) {
+  const childCount = countDescendants(node);
+  const mediaCount = countMediaItems(node);
+  const childLabel = childCount === 1 ? "1 child category" : `${childCount} child categories`;
+  const mediaLabel = mediaCount === 1 ? "1 media item" : `${mediaCount} media items`;
+
+  return confirmAdminAction({
+    title: "Delete category?",
+    message: `Delete "${node.name}"? This will remove ${childLabel} and ${mediaLabel}.`,
+    warning: "This also deletes every child category and media item under it.",
+    confirmText: "Delete category",
+    danger: true
   });
 }
 
@@ -1502,7 +1521,11 @@ document.getElementById("departmentSaveBtn")?.addEventListener("click", async ()
   if (!department) return;
   const selectedCount = department.categoryIds?.length || 0;
   const message = `Save "${department.name}" with ${selectedCount} visible categories? This changes what users in this department can see.`;
-  if (!window.confirm(message)) return;
+  if (!await confirmAdminAction({
+    title: "Save department?",
+    message,
+    confirmText: "Save department"
+  })) return;
   applyDepartmentForm(department);
   await persistData({ render: false, alignMedia: false });
   renderDepartmentEditor();
