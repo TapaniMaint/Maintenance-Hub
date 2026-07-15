@@ -9,7 +9,7 @@ import {
   uploadMediaFile,
   alignMediaStoragePaths,
   mediaUrlForDisplay
-} from "./app.js?v=dept-visual-20260715";
+} from "./app.js?v=dept-visual-2-20260715";
 import {
   getUser,
   isAdminUser,
@@ -995,18 +995,8 @@ function syncDepartmentCategoryStates() {
   for (const { node } of categoryRows(data.root).reverse()) {
     const input = elDepartmentCategoryList.querySelector(`input[value="${CSS.escape(node.id)}"]`);
     if (!input) continue;
-
-    const childIds = (node.children || []).flatMap((child) => descendantCategoryIds(child));
-    if (!childIds.length) {
-      input.indeterminate = false;
-      input.checked = assignedIds.has(node.id);
-      continue;
-    }
-
-    const checkedCount = childIds.filter((id) => assignedIds.has(id)).length;
+    input.indeterminate = false;
     input.checked = assignedIds.has(node.id);
-    input.indeterminate = (checkedCount > 0 && checkedCount < childIds.length) ||
-      (checkedCount === childIds.length && !assignedIds.has(node.id));
   }
 }
 
