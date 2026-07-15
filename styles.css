@@ -1601,7 +1601,7 @@ button.danger:hover { border-color: #ff5a5a; }
 
   .auth-shell {
     flex: 0 1 auto;
-    width: 100%;
+    /* width: 100%; */
   }
 
   .sidebar {
@@ -1924,9 +1924,10 @@ button.danger:hover { border-color: #ff5a5a; }
   .settings-panel {
     position: fixed;
     top: 78px;
-    /* left: 15px; */
-    right: 15px;
+    left: max(12px, env(safe-area-inset-left));
+    right: max(12px, env(safe-area-inset-right));
     width: auto;
+    min-width: 0;
     max-height: calc(100dvh - 74px);
     overflow-y: auto;
   }
