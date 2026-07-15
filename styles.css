@@ -597,6 +597,8 @@ body.home-visible #treeToggleBtn {
 
 @media (min-width: 981px) {
   body:not(.admin-page) .sidebar {
+    position: sticky;
+    top: 70px;
     height: calc(100dvh - 82px);
   }
 }
