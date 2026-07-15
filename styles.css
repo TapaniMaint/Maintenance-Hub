@@ -344,6 +344,12 @@ body.home-visible #treeToggleBtn {
   overflow-y: auto;
 }
 
+.portal-content {
+  height: calc(100dvh - 82px);
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .home-page {
   display: grid;
   gap: 14px;
