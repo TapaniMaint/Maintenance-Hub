@@ -652,8 +652,8 @@ export async function syncFromRemote(onUpdate) {
     lastRemoteSyncError = null;
     if (!remoteData) return false;
 
-    setLocalDataRaw(remoteData);
-    if (typeof onUpdate === "function") onUpdate(remoteData);
+    const shouldApply = typeof onUpdate !== "function" || onUpdate(remoteData) !== false;
+    if (shouldApply) setLocalDataRaw(remoteData);
     return true;
   } catch (error) {
     remoteSyncLoaded = false;

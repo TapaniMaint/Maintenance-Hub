@@ -9,7 +9,7 @@ import {
   uploadMediaFile,
   alignMediaStoragePaths,
   mediaUrlForDisplay
-} from "./app.js?v=category-save-3-20260715";
+} from "./app.js?v=category-save-4-20260715";
 import {
   getUser,
   isAdminUser,
@@ -47,6 +47,7 @@ let selectedMediaKeys = new Set();
 let departmentCategoryExpanded = new Set();
 let mediaRenderToken = 0;
 let authRefreshPromise = null;
+let saveInProgress = 0;
 
 const authForm = document.getElementById("authForm");
 const adminWorkspace = document.getElementById("adminWorkspace");
@@ -57,6 +58,7 @@ const emailInput = document.getElementById("adminEmail");
 const passwordInput = document.getElementById("adminPassword");
 
 function applyRemote(next) {
+  if (saveInProgress > 0) return false;
   data = next;
   if (!findNode(data.root, selectedId)) {
     selectedId = data.root.children[0]?.id || "root";
@@ -1409,6 +1411,7 @@ function validateUploadFiles(files) {
 }
 
 async function persistData({ render = true } = {}) {
+  saveInProgress += 1;
   try {
     if (render) renderTree();
     await alignMediaStoragePaths(data.root);
@@ -1421,6 +1424,8 @@ async function persistData({ render = true } = {}) {
     renderTree();
     showError(error, "Unable to save changes.");
     throw error;
+  } finally {
+    saveInProgress -= 1;
   }
 }
 
@@ -1449,6 +1454,7 @@ async function refreshAuthStateImpl() {
   setStatus("Admin session active. Supabase writes now use the user's access token.", "success");
   await syncFromRemote(applyRemote);
   renderTree();
+  return true;
 }
 
 async function refreshAuthState() {
