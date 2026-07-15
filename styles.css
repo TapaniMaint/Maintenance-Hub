@@ -1924,7 +1924,7 @@ button.danger:hover { border-color: #ff5a5a; }
   .settings-panel {
     position: fixed;
     top: 78px;
-    left: 15px;
+    /* left: 15px; */
     right: 15px;
     width: auto;
     max-height: calc(100dvh - 74px);
