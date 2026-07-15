@@ -9,7 +9,7 @@ import {
   uploadMediaFile,
   alignMediaStoragePaths,
   mediaUrlForDisplay
-} from "./app.js?v=category-save-2-20260715";
+} from "./app.js?v=category-save-3-20260715";
 import {
   getUser,
   isAdminUser,
@@ -1410,6 +1410,7 @@ function validateUploadFiles(files) {
 
 async function persistData({ render = true } = {}) {
   try {
+    if (render) renderTree();
     await alignMediaStoragePaths(data.root);
     await saveData(data);
     data = loadData();
