@@ -208,7 +208,8 @@ export function ensureDepartments(data) {
 
   data.departments = (departments.length ? departments : defaults).map((department) => {
     const fallback = byDefaultId.get(department.id) || defaults[0];
-    const categoryIds = Array.isArray(department.categoryIds) ? department.categoryIds : [];
+    const hasCategorySelection = Array.isArray(department.categoryIds);
+    const categoryIds = hasCategorySelection ? department.categoryIds : [];
     const validDepartmentCategoryIds = categoryIds.filter((id) => validCategoryIds.has(id));
     return {
       id: department.id || fallback.id,
@@ -217,9 +218,7 @@ export function ensureDepartments(data) {
         ...fallback.landing,
         ...(department.landing || {})
       },
-      categoryIds: categoryIds.length && !validDepartmentCategoryIds.length
-        ? fallback.categoryIds
-        : validDepartmentCategoryIds,
+      categoryIds: hasCategorySelection ? validDepartmentCategoryIds : fallback.categoryIds,
       snapshotItems: Array.isArray(department.snapshotItems)
         ? department.snapshotItems.filter((id) => allSnapshotItems.includes(id))
         : (fallback.snapshotItems || allSnapshotItems)
