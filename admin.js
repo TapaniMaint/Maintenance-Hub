@@ -9,7 +9,7 @@ import {
   uploadMediaFile,
   alignMediaStoragePaths,
   mediaUrlForDisplay
-} from "./app.js?v=category-save-5-20260715";
+} from "./app.js?v=category-save-6-20260715";
 import {
   getUser,
   isAdminUser,

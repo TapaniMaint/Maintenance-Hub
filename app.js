@@ -445,7 +445,9 @@ async function fetchRowsInPages(table, query) {
 }
 
 async function upsertRowsInBatches(table, rows) {
-  for (let offset = 0; offset < rows.length; offset += REMOTE_WRITE_BATCH_SIZE) {
+  const uniqueRows = [...new Map((rows || []).map((row) => [String(row.id), row])).values()];
+
+  for (let offset = 0; offset < uniqueRows.length; offset += REMOTE_WRITE_BATCH_SIZE) {
     await requestJson(tableUrl(table, "on_conflict=id"), {
       method: "POST",
       headers: await apiHeaders({
@@ -453,7 +455,7 @@ async function upsertRowsInBatches(table, rows) {
         "Content-Type": "application/json",
         Prefer: "resolution=merge-duplicates,return=minimal"
       }),
-      body: JSON.stringify(rows.slice(offset, offset + REMOTE_WRITE_BATCH_SIZE))
+      body: JSON.stringify(uniqueRows.slice(offset, offset + REMOTE_WRITE_BATCH_SIZE))
     });
   }
 }
@@ -904,15 +906,19 @@ export function countDescendants(node) {
 
 export function removeNodeById(parent, id) {
   if (!parent?.children) return false;
-  const idx = parent.children.findIndex(c => c.id === id);
-  if (idx !== -1) {
-    parent.children.splice(idx, 1);
-    return true;
+  let removed = false;
+
+  for (let idx = parent.children.length - 1; idx >= 0; idx -= 1) {
+    const child = parent.children[idx];
+    if (child.id === id) {
+      parent.children.splice(idx, 1);
+      removed = true;
+    } else if (removeNodeById(child, id)) {
+      removed = true;
+    }
   }
-  for (const c of parent.children) {
-    if (removeNodeById(c, id)) return true;
-  }
-  return false;
+
+  return removed;
 }
 
 export function fileToDataUrl(file) {
