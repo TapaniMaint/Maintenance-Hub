@@ -241,7 +241,9 @@ body.lightbox-open {
 }
 
 .admin-page .main {
-  flex-direction: column;
+  display: block;
+  height: calc(100dvh - 58px);
+  overflow: hidden;
 }
 
 .admin-page .auth-shell,
@@ -1592,12 +1594,6 @@ button.danger:hover { border-color: #ff5a5a; }
 @media (max-width: 980px) {
   .admin-page .workspace-shell {
     display: block;
-    height: auto;
-  }
-
-  .admin-page .workspace-shell > .content {
-    height: auto;
-    overflow: visible;
   }
 
   #sidebar {
@@ -1719,10 +1715,6 @@ button.danger:hover { border-color: #ff5a5a; }
     height: auto;
   }
 
-  .admin-page .workspace-shell {
-    display: block;
-    height: auto;
-  }
 }
 @media (max-width: 720px) {
   .site-header {
