@@ -361,9 +361,9 @@ body.home-visible #treeToggleBtn {
 }
 
 .portal-content {
-  height: calc(100dvh - 82px);
+  height: auto;
   min-height: 0;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .home-page {
