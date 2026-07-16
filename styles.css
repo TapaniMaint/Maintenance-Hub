@@ -242,8 +242,8 @@ body.lightbox-open {
 
 .admin-page .main {
   display: block;
-  height: calc(100dvh - 58px);
-  overflow: hidden;
+  height: auto;
+  overflow: visible;
 }
 
 .admin-page .auth-shell,
@@ -257,14 +257,12 @@ body.lightbox-open {
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   align-items: start;
-  height: calc(100dvh - 82px);
-  min-height: 0;
+  height: auto;
 }
 
 .admin-page .workspace-shell > .content {
-  height: calc(100dvh - 82px);
-  min-height: 0;
-  overflow-y: auto;
+  height: auto;
+  overflow: visible;
   background: transparent;
   border: 0;
   padding: 0;
