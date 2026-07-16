@@ -1720,19 +1720,8 @@ button.danger:hover { border-color: #ff5a5a; }
   }
 
   .admin-page .workspace-shell {
-    display: flex;
+    display: block;
     height: auto;
-  }
-}
-
-@media (min-width: 981px) and (max-width: 1200px) {
-  .admin-page .workspace-shell {
-    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
-  }
-
-  .admin-page .sidebar,
-  .admin-page .content {
-    width: 100%;
   }
 }
 @media (max-width: 720px) {
