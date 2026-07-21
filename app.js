@@ -618,7 +618,7 @@ async function fetchRemoteData() {
     fetchRowsInPages(SUPABASE_CONFIG.mediaTable, mediaQuery)
   ]);
 
-  if (!categories?.length) return null;
+  if (!categories) return null;
   let departments = [];
   try {
     departments = await fetchRowsInPages(SUPABASE_CONFIG.departmentsTable, departmentQuery);
