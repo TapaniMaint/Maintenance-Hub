@@ -542,6 +542,23 @@ async function walkNodesAsync(root, callback, path = []) {
   for (const child of root.children || []) await walkNodesAsync(child, callback, nextPath);
 }
 
+function validateCategoryIds(root) {
+  const seen = new Map();
+
+  function visit(node, path = []) {
+    const nextPath = node.id === "root" ? path : [...path, node.name];
+    if (node.id !== "root") {
+      if (seen.has(node.id)) {
+        throw new Error(`Duplicate category ID "${node.id}" at "${nextPath.join(" > ")}". Already used at "${seen.get(node.id)}".`);
+      }
+      seen.set(node.id, nextPath.join(" > "));
+    }
+    for (const child of node.children || []) visit(child, nextPath);
+  }
+
+  visit(root);
+}
+
 function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -602,6 +619,7 @@ async function importBackup(file) {
   try {
     const backup = JSON.parse(await file.text());
     if (!backup?.root || !Array.isArray(backup.root.children)) throw new Error("Backup file has invalid data.");
+    validateCategoryIds(backup.root);
     if (!window.confirm("Import this backup and replace current data?")) return;
 
     let restoredMedia = 0;
