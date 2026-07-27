@@ -1,4 +1,4 @@
-import { DEFAULT_DEPARTMENT_ID, LANDING_SNAPSHOT_ITEMS, loadData, findNode, syncFromRemote, mediaUrlForDisplay } from "./app.js?v=category-save-6-20260715";
+import { DEFAULT_DEPARTMENT_ID, LANDING_SNAPSHOT_ITEMS, loadData, findNode, syncFromRemote, mediaUrlForDisplay } from "./app.js?v=20260727";
 import { getUser, onAuthStateChange, signOut } from "./supabase-client.js";
 
 const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
