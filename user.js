@@ -1,4 +1,4 @@
-import { DEFAULT_DEPARTMENT_ID, LANDING_SNAPSHOT_ITEMS, loadData, findNode, syncFromRemote, mediaUrlForDisplay } from "./app.js?v=20260727";
+import { DEFAULT_DEPARTMENT_ID, LANDING_SNAPSHOT_ITEMS, loadData, findNode, syncFromRemote, loadCategoryMedia, applyCategoryMedia, mediaUrlForDisplay } from "./app.js?v=20260727";
 import { getUser, onAuthStateChange, signOut } from "./supabase-client.js";
 
 const EXPANDED_KEY = "maintenanceHubExpanded_user_v1";
@@ -29,6 +29,7 @@ let expanded = loadExpanded();
 let hasBrowsedMedia = false;
 let showingHomePage = !hasDepartmentRoute();
 let mediaRenderToken = 0;
+let mediaLoadToken = 0;
 
 function applyRemote(next) {
   data = next;
@@ -721,6 +722,7 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
   row.appendChild(spacer);
 
   row.addEventListener("click", () => {
+    const shouldLoadMedia = visibleIds.has(node.id);
     if (visibleIds.has(node.id)) {
       selectedId = node.id;
       hasBrowsedMedia = true;
@@ -733,6 +735,7 @@ function renderNodeRow(node, depth, searchQuery = "", revealSearchSubtree = fals
     }
 
     renderAll();
+    if (shouldLoadMedia) loadSelectedCategoryMedia(node.id);
     if (visibleIds.has(node.id) && !hasChildren && isSidebarDrawer()) closeSidebar();
   });
 
@@ -888,6 +891,18 @@ function renderAll() {
   renderImagesOnly();
 }
 
+async function loadSelectedCategoryMedia(categoryId) {
+  const loadToken = ++mediaLoadToken;
+  try {
+    const media = await loadCategoryMedia(categoryId);
+    if (loadToken !== mediaLoadToken || selectedId !== categoryId) return;
+    applyCategoryMedia(data, categoryId, media);
+    renderImagesOnly();
+  } catch (error) {
+    console.warn("Unable to load category media.", error);
+  }
+}
+
 function redirectToLogin() {
   window.location.assign("/login.html");
 }
@@ -942,7 +957,10 @@ async function startUserPortal() {
 
     if (userSignOutBtn) userSignOutBtn.hidden = false;
     renderAll();
-    const loadedRemoteData = await syncFromRemote(applyRemote);
+    const loadedRemoteData = await syncFromRemote(applyRemote, {
+      includeMedia: false,
+      cacheTtlMs: 5 * 60 * 1000
+    });
     document.body.classList.remove("auth-checking");
     if (!loadedRemoteData) renderAll();
   } catch (error) {

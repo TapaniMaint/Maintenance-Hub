@@ -2,6 +2,7 @@ import { SUPABASE_CONFIG } from "./supabase-config.js";
 import { getAccessToken, requireAdminAccessToken, supabase } from "./supabase-client.js";
 
 const STORE_KEY = "maintenanceHubData_v1";
+const REMOTE_SYNC_CACHE_KEY = `${STORE_KEY}_remote_sync`;
 const SIGNED_MEDIA_URL_TTL_SECONDS = 60 * 60;
 const REMOTE_WRITE_BATCH_SIZE = 500;
 export const DEFAULT_DEPARTMENT_ID = "mechanics";
@@ -328,6 +329,7 @@ let supportsDepartmentSnapshotItems = true;
 let remoteSyncLoaded = !remoteEnabled();
 let lastRemoteSyncError = null;
 const signedMediaUrlCache = new Map();
+const categoryMediaCache = new Map();
 
 export function hasRemoteSyncLoaded() {
   return !remoteEnabled() || remoteSyncLoaded;
@@ -603,7 +605,7 @@ export function resetData() {
   return seed;
 }
 
-async function fetchRemoteData() {
+async function fetchRemoteData({ includeMedia = true } = {}) {
   if (!remoteEnabled()) return null;
 
   const categoryQuery = "select=id,parent_id,name,sort_order,updated_at&order=sort_order.asc";
@@ -615,7 +617,7 @@ async function fetchRemoteData() {
     : "select=id,category_id,name,url,storage_path,sort_order,updated_at&order=sort_order.asc";
   const [categories, media] = await Promise.all([
     fetchRowsInPages(SUPABASE_CONFIG.categoriesTable, categoryQuery),
-    fetchRowsInPages(SUPABASE_CONFIG.mediaTable, mediaQuery)
+    includeMedia ? fetchRowsInPages(SUPABASE_CONFIG.mediaTable, mediaQuery) : Promise.resolve([])
   ]);
 
   if (!categories) return null;
@@ -630,32 +632,42 @@ async function fetchRemoteData() {
   return buildTree(categories, media || [], departments || []);
 }
 
-async function fetchRemoteDataWithFallback() {
+async function fetchRemoteDataWithFallback(options) {
   try {
-    return await fetchRemoteData();
+    return await fetchRemoteData(options);
   } catch (error) {
     if (supportsMediaFileName && missingFileNameColumn(error)) {
       supportsMediaFileName = false;
-      return fetchRemoteDataWithFallback();
+      return fetchRemoteDataWithFallback(options);
     }
     if (supportsDepartmentSnapshotItems && missingDepartmentSnapshotItemsColumn(error)) {
       supportsDepartmentSnapshotItems = false;
-      return fetchRemoteDataWithFallback();
+      return fetchRemoteDataWithFallback(options);
     }
     throw error;
   }
 }
 
-export async function syncFromRemote(onUpdate) {
+export async function syncFromRemote(onUpdate, { includeMedia = true, cacheTtlMs = 0 } = {}) {
   if (!remoteEnabled()) return false;
+
+  if (cacheTtlMs > 0) {
+    try {
+      const cachedAt = Number(localStorage.getItem(REMOTE_SYNC_CACHE_KEY) || 0);
+      if (cachedAt && Date.now() - cachedAt < cacheTtlMs) return false;
+    } catch {
+    }
+  }
+
   try {
-    const remoteData = await fetchRemoteDataWithFallback();
+    const remoteData = await fetchRemoteDataWithFallback({ includeMedia });
     remoteSyncLoaded = true;
     lastRemoteSyncError = null;
     if (!remoteData) return false;
 
     const shouldApply = typeof onUpdate !== "function" || onUpdate(remoteData) !== false;
     if (shouldApply) setLocalDataRaw(remoteData);
+    if (cacheTtlMs > 0) localStorage.setItem(REMOTE_SYNC_CACHE_KEY, String(Date.now()));
     return true;
   } catch (error) {
     remoteSyncLoaded = false;
@@ -663,6 +675,41 @@ export async function syncFromRemote(onUpdate) {
     console.warn("Unable to sync from Supabase.", error);
     return false;
   }
+}
+
+export async function loadCategoryMedia(categoryId) {
+  if (!categoryId || !remoteEnabled()) return [];
+  if (categoryMediaCache.has(categoryId)) return categoryMediaCache.get(categoryId);
+
+  const mediaQuery = supportsMediaFileName
+    ? "select=id,category_id,name,file_name,url,storage_path,sort_order,updated_at"
+    : "select=id,category_id,name,url,storage_path,sort_order,updated_at";
+  const filter = `category_id=eq.${encodeURIComponent(categoryId)}&order=sort_order.asc`;
+
+  try {
+    const rows = await fetchRowsInPages(SUPABASE_CONFIG.mediaTable, `${mediaQuery}&${filter}`);
+    const media = rows.map((item) => ({
+      id: item.id,
+      name: item.name,
+      fileName: item.file_name || "",
+      url: item.url || "",
+      storagePath: item.storage_path || ""
+    }));
+    categoryMediaCache.set(categoryId, media);
+    return media;
+  } catch (error) {
+    if (supportsMediaFileName && missingFileNameColumn(error)) {
+      supportsMediaFileName = false;
+      return loadCategoryMedia(categoryId);
+    }
+    throw error;
+  }
+}
+
+export function applyCategoryMedia(data, categoryId, media) {
+  const node = findNode(data?.root, categoryId)?.node;
+  if (node) node.images = Array.isArray(media) ? media : [];
+  return data;
 }
 
 export async function pushRemoteData(data) {
